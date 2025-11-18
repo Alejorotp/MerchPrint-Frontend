@@ -28,12 +28,17 @@ export default function Navbar() {
     router.push("/");
   };
 
+  const getHomeLink = () => {
+    if (isLoggedIn === null) return "/"; // Mientras carga, usar ruta por defecto
+    return isLoggedIn ? "/dashboard" : "/";
+  };
+
   // No renderizar nada hasta que sepamos el estado de autenticación
   if (isLoggedIn === null) {
     return (
       <nav className="fixed top-0 w-full bg-white shadow-sm z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href={getHomeLink()} className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full"></div>
             <span className="text-2xl font-bold text-gray-800">MerchPrint</span>
           </Link>
@@ -47,7 +52,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 w-full bg-white shadow-sm z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href={getHomeLink()} className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full"></div>
           <span className="text-2xl font-bold text-gray-800">MerchPrint</span>
         </Link>
