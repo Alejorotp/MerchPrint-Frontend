@@ -20,20 +20,82 @@ export default function LoginPage() {
     }
   }, [router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     // Autenticación de testing
     if (username === "test" && password === "test123") {
-      // Guardar estado de login
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("username", username);
+      try {
+        // Simular datos del usuario (después conectarás con tu API)
+        const userData = {
+          id: "user-test-001",
+          username: "test",
+          email: "test@merchprint.com",
+          name: "Usuario Test",
+          role: "client",
+        };
 
-      // Disparar evento personalizado para notificar a otros componentes
-      window.dispatchEvent(new Event("loginStatusChanged"));
+        // Guardar estado de login y datos del usuario
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("username", username);
+        localStorage.setItem("userId", userData.id);
+        localStorage.setItem("userEmail", userData.email);
+        localStorage.setItem("userName", userData.name);
+        localStorage.setItem("userRole", userData.role);
 
-      router.push("/dashboard");
+        // Simular órdenes del usuario (después vendrán de la API)
+        const mockOrders = [
+          {
+            id: "820396271428",
+            userId: userData.id,
+            eventType: "Bodas",
+            quantity: 200,
+            status: "completed",
+            createdAt: "2025-08-03",
+            company: "PrintPro Solutions",
+            price: 127474.32,
+            estimatedDate: "2025-08-10",
+          },
+          {
+            id: "820210558183",
+            userId: userData.id,
+            eventType: "Conciertos",
+            quantity: 500,
+            status: "in_progress",
+            createdAt: "2025-06-16",
+            company: "EventPrint Corp",
+            price: 86532.13,
+            estimatedDate: "2025-11-30",
+          },
+          {
+            id: "820156743291",
+            userId: userData.id,
+            eventType: "Conferencias",
+            quantity: 150,
+            status: "pending",
+            createdAt: "2025-11-15",
+          },
+          {
+            id: "820098234567",
+            userId: userData.id,
+            eventType: "Cumpleaños",
+            quantity: 50,
+            status: "cancelled",
+            createdAt: "2025-10-20",
+          },
+        ];
+
+        // Guardar órdenes en localStorage (después vendrán de la API)
+        localStorage.setItem("userOrders", JSON.stringify(mockOrders));
+
+        // Disparar evento personalizado para notificar a otros componentes
+        window.dispatchEvent(new Event("loginStatusChanged"));
+
+        router.push("/dashboard");
+      } catch (err) {
+        setError("Error al cargar los datos del usuario");
+      }
     } else {
       setError("Usuario o contraseña incorrectos");
     }

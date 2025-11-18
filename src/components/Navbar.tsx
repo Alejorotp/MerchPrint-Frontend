@@ -103,7 +103,7 @@ export default function Navbar() {
                   href="/dashboard"
                   className="block px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-t-xl"
                 >
-                  Dashboard
+                  Principal
                 </Link>
                 <Link
                   href="/dashboard/orders"
