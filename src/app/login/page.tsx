@@ -4,12 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { authService } from "@/lib/api/services/auth.service";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // Redirigir si ya está logueado
@@ -23,81 +25,30 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
-    // Autenticación de testing
-    if (username === "test" && password === "test123") {
-      try {
-        // Simular datos del usuario (después conectarás con tu API)
-        const userData = {
-          id: "user-test-001",
-          username: "test",
-          email: "test@merchprint.com",
-          name: "Usuario Test",
-          role: "client",
-        };
+    try {
+      // Autenticación con el backend
+      const response = await authService.login({ email, password });
 
-        // Guardar estado de login y datos del usuario
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("username", username);
-        localStorage.setItem("userId", userData.id);
-        localStorage.setItem("userEmail", userData.email);
-        localStorage.setItem("userName", userData.name);
-        localStorage.setItem("userRole", userData.role);
+      // authService.login() ya guarda accessToken y refreshToken automáticamente
+      // Solo guardamos los datos adicionales del usuario
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userId", response.userId);
+      localStorage.setItem("userName", response.name);
+      localStorage.setItem("userEmail", response.email);
+      localStorage.setItem("userRole", response.roleId);
 
-        // Simular órdenes del usuario (después vendrán de la API)
-        const mockOrders = [
-          {
-            id: "820396271428",
-            userId: userData.id,
-            eventType: "Bodas",
-            quantity: 200,
-            status: "completed",
-            createdAt: "2025-08-03",
-            company: "PrintPro Solutions",
-            price: 127474.32,
-            estimatedDate: "2025-08-10",
-          },
-          {
-            id: "820210558183",
-            userId: userData.id,
-            eventType: "Conciertos",
-            quantity: 500,
-            status: "in_progress",
-            createdAt: "2025-06-16",
-            company: "EventPrint Corp",
-            price: 86532.13,
-            estimatedDate: "2025-11-30",
-          },
-          {
-            id: "820156743291",
-            userId: userData.id,
-            eventType: "Conferencias",
-            quantity: 150,
-            status: "pending",
-            createdAt: "2025-11-15",
-          },
-          {
-            id: "820098234567",
-            userId: userData.id,
-            eventType: "Cumpleaños",
-            quantity: 50,
-            status: "cancelled",
-            createdAt: "2025-10-20",
-          },
-        ];
+      // Disparar evento personalizado para notificar a otros componentes
+      window.dispatchEvent(new Event("loginStatusChanged"));
 
-        // Guardar órdenes en localStorage (después vendrán de la API)
-        localStorage.setItem("userOrders", JSON.stringify(mockOrders));
-
-        // Disparar evento personalizado para notificar a otros componentes
-        window.dispatchEvent(new Event("loginStatusChanged"));
-
-        router.push("/dashboard");
-      } catch (err) {
-        setError("Error al cargar los datos del usuario");
-      }
-    } else {
-      setError("Usuario o contraseña incorrectos");
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(
+        err.message || "Credenciales inválidas. Verifica tu email y contraseña."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -155,13 +106,14 @@ export default function LoginPage() {
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Username Input */}
+                {/* Email Input */}
                 <div>
                   <input
-                    type="text"
-                    placeholder="Ingresa tu usuario"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    type="email"
+                    placeholder="Ingresa tu email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                     className="w-full px-6 py-4 bg-gray-100 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-800 placeholder:text-gray-500"
                   />
                 </div>
@@ -173,6 +125,7 @@ export default function LoginPage() {
                     placeholder="Contraseña"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    required
                     className="w-full px-6 py-4 pr-12 bg-gray-100 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-800 placeholder:text-gray-500 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden"
                   />
                   <button
@@ -226,11 +179,6 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {/* Testing Info */}
-                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm">
-                  <strong>Usuario de prueba:</strong> test / test123
-                </div>
-
                 {/* Recovery Password */}
                 <div className="text-right">
                   <Link
@@ -244,9 +192,36 @@ export default function LoginPage() {
                 {/* Sign In Button */}
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl"
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  Iniciar sesión
+                  {isLoading ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Iniciando sesión...
+                    </>
+                  ) : (
+                    "Iniciar sesión"
+                  )}
                 </button>
 
                 {/* Divider */}
