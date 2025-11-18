@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   const features = [
     {
@@ -25,55 +29,47 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    // Función para verificar estado de login
+    const checkLoginStatus = () => {
+      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+      setIsLoggedIn(loggedIn);
+    };
+
+    // Verificar inicialmente
+    checkLoginStatus();
+
+    // Escuchar cambios en localStorage (para detectar logout)
+    window.addEventListener("storage", checkLoginStatus);
+
+    // También escuchar un evento personalizado para cambios en la misma pestaña
+    window.addEventListener("loginStatusChanged", checkLoginStatus);
+
+    // Carrusel
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % features.length);
     }, 4000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener("loginStatusChanged", checkLoginStatus);
+    };
   }, [features.length]);
+
+  const handleCreateOrder = () => {
+    // Verificar estado actual antes de redirigir
+    const currentLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (currentLoggedIn) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
-      <nav className="fixed top-0 w-full bg-white shadow-sm z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full"></div>
-            <span className="text-2xl font-bold text-gray-800">MerchPrint</span>
-          </div>
-          <div className="hidden md:flex items-center space-x-8">
-            <Link
-              href="#como-funciona"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Cómo funciona
-            </Link>
-            <Link
-              href="#beneficios"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Beneficios
-            </Link>
-            <Link
-              href="#empresas"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Para empresas
-            </Link>
-            <Link
-              href="/login"
-              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-full hover:shadow-lg transition-all"
-            >
-              Iniciar sesión
-            </Link>
-            <Link
-              href="/register"
-              className="px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-full hover:border-blue-500 hover:text-blue-500 transition-all"
-            >
-              Registrarse
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-6">
@@ -90,12 +86,12 @@ export default function Home() {
             velocidad.
           </p>
           <div className="flex justify-center space-x-4">
-            <Link
-              href="/login"
+            <button
+              onClick={handleCreateOrder}
               className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold rounded-full hover:shadow-2xl transition-all transform hover:scale-105"
             >
               Crear orden ahora
-            </Link>
+            </button>
             <Link
               href="#como-funciona"
               className="px-8 py-4 border-2 border-gray-300 text-gray-700 font-bold rounded-full hover:border-blue-500 hover:text-blue-500 transition-all"

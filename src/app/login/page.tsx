@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -12,12 +12,27 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  // Redirigir si ya está logueado
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (isLoggedIn) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     // Autenticación de testing
     if (username === "test" && password === "test123") {
+      // Guardar estado de login
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("username", username);
+
+      // Disparar evento personalizado para notificar a otros componentes
+      window.dispatchEvent(new Event("loginStatusChanged"));
+
       router.push("/dashboard");
     } else {
       setError("Usuario o contraseña incorrectos");
