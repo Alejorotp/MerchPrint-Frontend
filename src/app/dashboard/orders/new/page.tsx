@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import { eventsService, authService } from "@/lib/api";
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function CreateOrderPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Datos del evento
   const [eventType, setEventType] = useState(categoryFromUrl || "");
@@ -27,6 +29,7 @@ export default function CreateOrderPage() {
   const [colors, setColors] = useState("");
   const [material, setMaterial] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
+  const [budget, setBudget] = useState("");
 
   // Proteger la ruta
   useEffect(() => {
@@ -74,74 +77,69 @@ export default function CreateOrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     setIsSubmitting(true);
 
     try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        throw new Error("No se encontró el ID del usuario");
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser?.id) {
+        throw new Error("Debes iniciar sesión antes de crear una orden.");
       }
 
-      // 1. Preparar datos del evento
-      const eventData = {
-        userId: userId,
+      const eventDateValue = new Date(eventDate);
+      if (Number.isNaN(eventDateValue.getTime())) {
+        throw new Error("Selecciona una fecha de evento válida.");
+      }
+
+      const quantityNumber = Number(quantity);
+      if (!Number.isFinite(quantityNumber) || quantityNumber <= 0) {
+        throw new Error("La cantidad debe ser un número mayor a cero.");
+      }
+
+      const budgetNumber = Number(budget);
+      if (!Number.isFinite(budgetNumber) || budgetNumber <= 0) {
+        throw new Error("Ingresa un presupuesto estimado válido.");
+      }
+
+      const eventPayload = {
+        userId: currentUser.id,
         name: eventName,
-        date: new Date(eventDate),
+        date: eventDateValue.toISOString(),
         location: eventLocation,
       };
 
-      // 2. Preparar specs_json con tipo de evento como primera clave
-      const specsJson = {
-        eventType: eventType, // Primera clave: tipo de evento
-        productType: productType,
-        size: size,
-        colors: colors,
-        material: material,
-        additionalInfo: additionalInfo,
-      };
+      const createdEvent = await eventsService.createEvent(eventPayload);
 
-      // 3. Preparar datos de requerimientos
-      const requirementsData = {
-        description: description,
-        quantity: parseInt(quantity),
+      const specsJson: Record<string, unknown> = {
+        eventType,
+        productType,
+      };
+      if (size) specsJson.size = size;
+      if (colors) specsJson.colors = colors;
+      if (material) specsJson.material = material;
+      if (additionalInfo) specsJson.additionalInfo = additionalInfo;
+
+      await eventsService.createRequirements(createdEvent.id, {
+        description,
+        quantity: quantityNumber,
         specs_json: specsJson,
-      };
-
-      // TODO: Aquí conectarás con tu API
-      // Flujo:
-      // 1. POST /events - Crear evento
-      // 2. POST /requirements - Crear requerimientos (con eventId del paso 1)
-      // 3. POST /auctions - Crear subasta (con event_id del paso 1)
-      // 4. Las compañías verán la subasta y podrán hacer ofertas
-
-      console.log("Datos a enviar:", {
-        event: eventData,
-        requirements: requirementsData,
       });
 
-      // Simulación temporal - guardar localmente
-      const newOrder = {
-        id: `ORD-${Date.now()}`,
-        userId: userId,
-        eventType: eventType,
-        quantity: parseInt(quantity),
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        eventName: eventName,
-        description: description,
-      };
+      await eventsService.createAuction({
+        event_id: createdEvent.id,
+        start_at: new Date().toISOString(),
+        end_at: eventDateValue.toISOString(),
+        suggested_price: budgetNumber,
+      });
 
-      // Actualizar órdenes en localStorage
-      const storedOrders = localStorage.getItem("userOrders");
-      const orders = storedOrders ? JSON.parse(storedOrders) : [];
-      orders.unshift(newOrder);
-      localStorage.setItem("userOrders", JSON.stringify(orders));
-
-      // Redirigir a mis órdenes
-      router.push("/dashboard/orders");
+      router.push("/dashboard/orders?created=1");
     } catch (error) {
       console.error("Error al crear la orden:", error);
-      alert("Hubo un error al crear la orden. Por favor intenta de nuevo.");
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Hubo un error al crear la orden. Intenta nuevamente."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -195,6 +193,12 @@ export default function CreateOrderPage() {
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-8">
+            {formError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                {formError}
+              </div>
+            )}
+
             {/* Sección: Información del Evento */}
             <div className="bg-white rounded-2xl shadow-sm p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -328,6 +332,23 @@ export default function CreateOrderPage() {
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Presupuesto estimado (USD){" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                    required
+                    min="1"
+                    step="0.01"
+                    placeholder="Ej: 500"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
+                  />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
