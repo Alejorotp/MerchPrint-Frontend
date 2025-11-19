@@ -29,17 +29,17 @@ export const authService = {
 
     // Guardar tokens en localStorage
     if (typeof window !== "undefined") {
+      const normalizedUser = {
+        id: response.userId,
+        userId: response.userId, // mantener compatibilidad con datos anteriores
+        email: response.email,
+        name: response.name,
+        roleId: response.roleId,
+      } satisfies UserDTO & { userId: string };
+
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          userId: response.userId,
-          email: response.email,
-          name: response.name,
-          roleId: response.roleId,
-        }),
-      );
+      localStorage.setItem("user", JSON.stringify(normalizedUser));
     }
 
     return response;
@@ -76,7 +76,21 @@ export const authService = {
     if (!userStr) return null;
 
     try {
-      return JSON.parse(userStr);
+      const stored = JSON.parse(userStr) as Partial<UserDTO> & {
+        userId?: string;
+      };
+
+      if (!stored) return null;
+
+      const id = stored.id ?? stored.userId;
+      if (!id) return null;
+
+      return {
+        id,
+        email: stored.email ?? "",
+        name: stored.name ?? "",
+        roleId: stored.roleId ?? "",
+      } satisfies UserDTO;
     } catch {
       return null;
     }
