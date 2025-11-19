@@ -4,7 +4,7 @@
  */
 
 // Cliente API
-export { apiClient, API_BASE_URL } from "./client";
+export { API_BASE_URL, apiClient } from "./client";
 
 // Servicios
 export { authService } from "./services/auth.service";
@@ -14,32 +14,27 @@ export { ordersService } from "./services/orders.service";
 
 // Tipos
 export type {
-  // Auth
-  LoginDTO,
-  AuthResponse,
-  CreateUserDTO,
-  UserDTO,
-  CreateRoleDTO,
-  RoleDTO,
-  // Companies
-  CreateCompanyDTO,
-  CompanyDTO,
-  CreateProductDTO,
-  ProductDTO,
-  // Events
-  CreateEventDTO,
-  EventDTO,
-  CreateAuctionDTO,
-  AuctionDTO,
-  CreateRequirementsDTO,
-  RequirementsDTO,
-  // Orders
-  CreateOrderDTO,
-  OrderDTO,
-  CreateOfferDTO,
-  OfferDTO,
   AcceptOfferDTO,
-  // Utils
   ApiError,
+  AuctionDTO,
+  AuthResponse,
+  CompanyDTO,
+  CreateAuctionDTO,
+  CreateCompanyDTO,
+  CreateEventDTO,
+  CreateOfferDTO,
+  CreateOrderDTO,
+  CreateProductDTO,
+  CreateRequirementsDTO,
+  CreateRoleDTO,
+  CreateUserDTO,
+  EventDTO,
+  LoginDTO,
+  OfferDTO,
+  OrderDTO,
   PaginatedResponse,
+  ProductDTO,
+  RequirementsDTO,
+  RoleDTO,
+  UserDTO,
 } from "./types";

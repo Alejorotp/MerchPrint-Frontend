@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 
 // Estados de órdenes del backend
@@ -116,6 +116,7 @@ export default function MyOrdersPage() {
                 Object.keys(statusConfig) as Array<keyof typeof statusConfig>
               ).map((status) => (
                 <button
+                  type="button"
                   key={status}
                   onClick={() => setActiveTab(status)}
                   className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all ${
@@ -149,8 +150,13 @@ export default function MyOrdersPage() {
                 placeholder="N° de pedido, artículo o tienda"
                 className="w-full px-6 py-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-800 placeholder:text-gray-400"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:shadow-lg transition-all">
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:shadow-lg transition-all"
+              >
                 <svg
+                  aria-hidden="true"
+                  focusable="false"
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
@@ -206,20 +212,28 @@ export default function MyOrdersPage() {
                           <span className="text-sm text-gray-500">
                             Pedido efectuado el:{" "}
                             {new Date(order.createdAt).toLocaleDateString(
-                              "es-ES"
+                              "es-ES",
                             )}
                           </span>
                         </div>
                         <p className="text-sm text-gray-600">
                           N° de pedido:{" "}
-                          <button className="text-blue-500 hover:text-blue-600 font-medium">
+                          <button
+                            type="button"
+                            className="text-blue-500 hover:text-blue-600 font-medium"
+                          >
                             {order.id} Copiar
                           </button>
                         </p>
                       </div>
-                      <button className="text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1">
+                      <button
+                        type="button"
+                        className="text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1"
+                      >
                         Detalles del pedido
                         <svg
+                          aria-hidden="true"
+                          focusable="false"
                           className="w-5 h-5"
                           fill="none"
                           stroke="currentColor"
@@ -265,7 +279,7 @@ export default function MyOrdersPage() {
                           <p className="text-green-600 text-sm font-medium">
                             Entrega estimada:{" "}
                             {new Date(order.estimatedDate).toLocaleDateString(
-                              "es-ES"
+                              "es-ES",
                             )}
                           </p>
                         )}
@@ -286,21 +300,33 @@ export default function MyOrdersPage() {
                         )}
                         <div className="flex flex-col gap-2 w-48">
                           {order.status === "completed" && (
-                            <button className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                            <button
+                              type="button"
+                              className="w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                            >
                               Añadir a la cesta
                             </button>
                           )}
                           {order.status === "pending" && (
-                            <button className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                            <button
+                              type="button"
+                              className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                            >
                               Ver ofertas
                             </button>
                           )}
                           {order.status === "in_progress" && (
-                            <button className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
+                            <button
+                              type="button"
+                              className="w-full px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                            >
                               Seguir pedido
                             </button>
                           )}
-                          <button className="w-full px-4 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all">
+                          <button
+                            type="button"
+                            className="w-full px-4 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all"
+                          >
                             {order.status === "cancelled"
                               ? "Ver detalles"
                               : "Borrar"}

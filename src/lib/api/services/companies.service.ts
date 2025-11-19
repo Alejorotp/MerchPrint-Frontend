@@ -5,8 +5,8 @@
 
 import { apiClient } from "../client";
 import type {
-  CreateCompanyDTO,
   CompanyDTO,
+  CreateCompanyDTO,
   CreateProductDTO,
   ProductDTO,
 } from "../types";
@@ -42,7 +42,7 @@ export const companiesService = {
    */
   async updateCompany(
     id: string,
-    data: Partial<CreateCompanyDTO>
+    data: Partial<CreateCompanyDTO>,
   ): Promise<CompanyDTO> {
     return apiClient.put<CompanyDTO>(`/companies/${id}`, data);
   },
@@ -63,7 +63,7 @@ export const companiesService = {
    */
   async createProduct(
     companyId: string,
-    data: Omit<CreateProductDTO, "companyId">
+    data: Omit<CreateProductDTO, "companyId">,
   ): Promise<ProductDTO> {
     return apiClient.post<ProductDTO>(`/companies/${companyId}/products`, {
       ...data,
@@ -90,7 +90,7 @@ export const companiesService = {
    */
   async updateProduct(
     id: string,
-    data: Partial<CreateProductDTO>
+    data: Partial<CreateProductDTO>,
   ): Promise<ProductDTO> {
     return apiClient.put<ProductDTO>(`/companies/products/${id}`, data);
   },

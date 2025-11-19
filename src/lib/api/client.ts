@@ -23,7 +23,7 @@ class ApiClient {
    * Obtiene los headers por defecto incluyendo el token de autenticación
    */
   private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
 
@@ -31,7 +31,7 @@ class ApiClient {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("accessToken");
       if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+        headers.Authorization = `Bearer ${token}`;
       }
     }
 
@@ -43,7 +43,7 @@ class ApiClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestOptions = {
@@ -132,7 +132,7 @@ class ApiClient {
   async post<T>(
     endpoint: string,
     data?: unknown,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
@@ -147,7 +147,7 @@ class ApiClient {
   async put<T>(
     endpoint: string,
     data?: unknown,
-    options?: RequestOptions
+    options?: RequestOptions,
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,

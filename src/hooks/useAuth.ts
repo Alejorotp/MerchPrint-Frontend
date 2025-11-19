@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { authService, type UserDTO } from "@/lib/api";
 
 export function useAuth() {

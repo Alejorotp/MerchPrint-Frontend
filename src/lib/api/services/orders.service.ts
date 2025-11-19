@@ -5,11 +5,11 @@
 
 import { apiClient } from "../client";
 import type {
-  CreateOrderDTO,
-  OrderDTO,
-  CreateOfferDTO,
-  OfferDTO,
   AcceptOfferDTO,
+  CreateOfferDTO,
+  CreateOrderDTO,
+  OfferDTO,
+  OrderDTO,
 } from "../types";
 
 export const ordersService = {
@@ -96,7 +96,7 @@ export const ordersService = {
    */
   async updateOffer(
     id: string,
-    data: Partial<CreateOfferDTO>
+    data: Partial<CreateOfferDTO>,
   ): Promise<OfferDTO> {
     return apiClient.put<OfferDTO>(`/offers/${id}`, data);
   },

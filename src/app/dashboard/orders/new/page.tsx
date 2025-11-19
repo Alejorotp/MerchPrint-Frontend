@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import { eventsService, authService } from "@/lib/api";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import Navbar from "@/components/Navbar";
+import { authService, eventsService } from "@/lib/api";
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -85,7 +85,6 @@ export default function CreateOrderPage() {
       if (!currentUser?.id) {
         throw new Error("Debes iniciar sesión antes de crear una orden.");
       }
-
       const eventDateValue = new Date(eventDate);
       if (Number.isNaN(eventDateValue.getTime())) {
         throw new Error("Selecciona una fecha de evento válida.");
@@ -138,7 +137,7 @@ export default function CreateOrderPage() {
       setFormError(
         error instanceof Error
           ? error.message
-          : "Hubo un error al crear la orden. Intenta nuevamente."
+          : "Hubo un error al crear la orden. Intenta nuevamente.",
       );
     } finally {
       setIsSubmitting(false);
@@ -169,6 +168,8 @@ export default function CreateOrderPage() {
               className="inline-flex items-center text-blue-500 hover:text-blue-600 mb-4"
             >
               <svg
+                aria-hidden="true"
+                focusable="false"
                 className="w-5 h-5 mr-2"
                 fill="none"
                 stroke="currentColor"
@@ -210,10 +211,14 @@ export default function CreateOrderPage() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="event-type"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Tipo de evento <span className="text-red-500">*</span>
                   </label>
                   <select
+                    id="event-type"
                     value={eventType}
                     onChange={(e) => setEventType(e.target.value)}
                     required
@@ -229,10 +234,14 @@ export default function CreateOrderPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="event-name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Nombre del evento <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="event-name"
                     type="text"
                     value={eventName}
                     onChange={(e) => setEventName(e.target.value)}
@@ -244,10 +253,14 @@ export default function CreateOrderPage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="event-date"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Fecha del evento <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="event-date"
                       type="date"
                       value={eventDate}
                       onChange={(e) => setEventDate(e.target.value)}
@@ -258,10 +271,14 @@ export default function CreateOrderPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="event-location"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Ubicación <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="event-location"
                       type="text"
                       value={eventLocation}
                       onChange={(e) => setEventLocation(e.target.value)}
@@ -285,10 +302,14 @@ export default function CreateOrderPage() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="event-description"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Descripción general <span className="text-red-500">*</span>
                   </label>
                   <textarea
+                    id="event-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     required
@@ -300,10 +321,14 @@ export default function CreateOrderPage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-type"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Tipo de producto <span className="text-red-500">*</span>
                     </label>
                     <select
+                      id="product-type"
                       value={productType}
                       onChange={(e) => setProductType(e.target.value)}
                       required
@@ -319,10 +344,14 @@ export default function CreateOrderPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-quantity"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Cantidad <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="product-quantity"
                       type="number"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
@@ -335,11 +364,15 @@ export default function CreateOrderPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="product-budget"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Presupuesto estimado (USD){" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="product-budget"
                     type="number"
                     value={budget}
                     onChange={(e) => setBudget(e.target.value)}
@@ -353,10 +386,14 @@ export default function CreateOrderPage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-size"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Tamaño/Dimensiones
                     </label>
                     <input
+                      id="product-size"
                       type="text"
                       value={size}
                       onChange={(e) => setSize(e.target.value)}
@@ -366,10 +403,14 @@ export default function CreateOrderPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-colors"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Colores
                     </label>
                     <input
+                      id="product-colors"
                       type="text"
                       value={colors}
                       onChange={(e) => setColors(e.target.value)}
@@ -380,10 +421,14 @@ export default function CreateOrderPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="product-material"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Material
                   </label>
                   <input
+                    id="product-material"
                     type="text"
                     value={material}
                     onChange={(e) => setMaterial(e.target.value)}
@@ -393,10 +438,14 @@ export default function CreateOrderPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="additional-info"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Información adicional
                   </label>
                   <textarea
+                    id="additional-info"
                     value={additionalInfo}
                     onChange={(e) => setAdditionalInfo(e.target.value)}
                     rows={3}
@@ -412,6 +461,8 @@ export default function CreateOrderPage() {
               <div className="flex gap-4">
                 <div className="flex-shrink-0">
                   <svg
+                    aria-hidden="true"
+                    focusable="false"
                     className="w-6 h-6 text-blue-600"
                     fill="none"
                     stroke="currentColor"
@@ -471,6 +522,8 @@ export default function CreateOrderPage() {
                 ) : (
                   <>
                     <svg
+                      aria-hidden="true"
+                      focusable="false"
                       className="w-5 h-5"
                       fill="none"
                       stroke="currentColor"

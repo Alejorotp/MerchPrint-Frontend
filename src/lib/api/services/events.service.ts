@@ -5,11 +5,11 @@
 
 import { apiClient } from "../client";
 import type {
-  CreateEventDTO,
-  EventDTO,
-  CreateAuctionDTO,
   AuctionDTO,
+  CreateAuctionDTO,
+  CreateEventDTO,
   CreateRequirementsDTO,
+  EventDTO,
   RequirementsDTO,
 } from "../types";
 
@@ -44,7 +44,7 @@ export const eventsService = {
    */
   async updateEvent(
     id: string,
-    data: Partial<CreateEventDTO>
+    data: Partial<CreateEventDTO>,
   ): Promise<EventDTO> {
     return apiClient.put<EventDTO>(`/events/update/${id}`, data);
   },
@@ -97,7 +97,7 @@ export const eventsService = {
    */
   async createRequirements(
     eventId: string,
-    data: Omit<CreateRequirementsDTO, "eventId">
+    data: Omit<CreateRequirementsDTO, "eventId">,
   ): Promise<RequirementsDTO> {
     return apiClient.post<RequirementsDTO>("/requirements", {
       ...data,
@@ -117,7 +117,7 @@ export const eventsService = {
    */
   async updateRequirements(
     id: string,
-    data: Partial<CreateRequirementsDTO>
+    data: Partial<CreateRequirementsDTO>,
   ): Promise<RequirementsDTO> {
     return apiClient.put<RequirementsDTO>(`/requirements/update/${id}`, data);
   },

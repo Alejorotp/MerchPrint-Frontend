@@ -6,12 +6,12 @@
 
 import {
   authService,
-  companiesService,
-  eventsService,
-  ordersService,
-  type LoginDTO,
   type CreateEventDTO,
   type CreateOfferDTO,
+  companiesService,
+  eventsService,
+  type LoginDTO,
+  ordersService,
 } from "@/lib/api";
 
 // ============================================
@@ -173,7 +173,7 @@ async function ejemploCrearRequisitos() {
           logo: "logo-empresa.png",
           impresion: "serigrafía",
         },
-      }
+      },
     );
     console.log("Requisitos creados:", requirements);
   } catch (error) {
@@ -259,7 +259,7 @@ async function ejemploActualizarEstadoOrden() {
   try {
     const updatedOrder = await ordersService.updateOrderStatus(
       "order-id-123",
-      "en_produccion"
+      "en_produccion",
     );
     console.log("Orden actualizada:", updatedOrder);
   } catch (error) {

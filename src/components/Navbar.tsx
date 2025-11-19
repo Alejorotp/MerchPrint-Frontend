@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -60,8 +60,14 @@ export default function Navbar() {
         {isLoggedIn ? (
           // Usuario logueado - Mostrar perfil y búsqueda
           <div className="flex items-center space-x-4">
-            <button className="relative p-2 text-gray-600 hover:text-blue-500 transition-colors">
+            <button
+              type="button"
+              aria-label="Abrir notificaciones"
+              className="relative p-2 text-gray-600 hover:text-blue-500 transition-colors"
+            >
               <svg
+                aria-hidden="true"
+                focusable="false"
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
@@ -78,7 +84,7 @@ export default function Navbar() {
             </button>
 
             <div className="relative group">
-              <button className="flex items-center space-x-3">
+              <button type="button" className="flex items-center space-x-3">
                 <div className="text-right hidden md:block">
                   <p className="text-sm font-semibold text-gray-800">
                     {username}
@@ -87,6 +93,8 @@ export default function Navbar() {
                 </div>
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-semibold hover:shadow-lg transition-all">
                   <svg
+                    aria-hidden="true"
+                    focusable="false"
                     className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
@@ -123,6 +131,7 @@ export default function Navbar() {
                   Mi perfil
                 </Link>
                 <button
+                  type="button"
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-b-xl"
                 >

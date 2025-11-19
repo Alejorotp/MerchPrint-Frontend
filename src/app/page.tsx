@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [_isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
   const features = [
@@ -54,7 +54,7 @@ export default function Home() {
       window.removeEventListener("storage", checkLoginStatus);
       window.removeEventListener("loginStatusChanged", checkLoginStatus);
     };
-  }, [features.length]);
+  }, []);
 
   const handleCreateOrder = () => {
     // Verificar estado actual antes de redirigir
@@ -87,6 +87,7 @@ export default function Home() {
           </p>
           <div className="flex justify-center space-x-4">
             <button
+              type="button"
               onClick={handleCreateOrder}
               className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold rounded-full hover:shadow-2xl transition-all transform hover:scale-105"
             >
@@ -102,9 +103,10 @@ export default function Home() {
 
           {/* Slide Indicators */}
           <div className="flex justify-center space-x-3 mt-16">
-            {features.map((_, index) => (
+            {features.map((feature, index) => (
               <button
-                key={index}
+                type="button"
+                key={feature.title}
                 onClick={() => setCurrentSlide(index)}
                 className={`h-3 rounded-full transition-all ${
                   currentSlide === index
@@ -123,7 +125,7 @@ export default function Home() {
           <div className="relative h-96 overflow-hidden rounded-3xl">
             {features.map((feature, index) => (
               <div
-                key={index}
+                key={feature.title}
                 className={`absolute inset-0 transition-all duration-700 ${
                   currentSlide === index
                     ? "opacity-100 translate-x-0"
@@ -204,6 +206,8 @@ export default function Home() {
             <div className="bg-white p-8 rounded-2xl shadow-lg">
               <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-4">
                 <svg
+                  aria-hidden="true"
+                  focusable="false"
                   className="w-6 h-6 text-white"
                   fill="none"
                   stroke="currentColor"
@@ -228,6 +232,8 @@ export default function Home() {
             <div className="bg-white p-8 rounded-2xl shadow-lg">
               <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mb-4">
                 <svg
+                  aria-hidden="true"
+                  focusable="false"
                   className="w-6 h-6 text-white"
                   fill="none"
                   stroke="currentColor"
@@ -252,6 +258,8 @@ export default function Home() {
             <div className="bg-white p-8 rounded-2xl shadow-lg">
               <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-4">
                 <svg
+                  aria-hidden="true"
+                  focusable="false"
                   className="w-6 h-6 text-white"
                   fill="none"
                   stroke="currentColor"
@@ -276,6 +284,8 @@ export default function Home() {
             <div className="bg-white p-8 rounded-2xl shadow-lg">
               <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mb-4">
                 <svg
+                  aria-hidden="true"
+                  focusable="false"
                   className="w-6 h-6 text-white"
                   fill="none"
                   stroke="currentColor"

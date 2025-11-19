@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 
 export default function DashboardPage() {
@@ -111,8 +111,13 @@ export default function DashboardPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-6 py-3 bg-gray-100 rounded-full border-none focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all text-gray-800 placeholder:text-gray-500"
             />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full hover:shadow-lg transition-all">
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full hover:shadow-lg transition-all"
+            >
               <svg
+                aria-hidden="true"
+                focusable="false"
                 className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
@@ -163,9 +168,9 @@ export default function DashboardPage() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {eventCategories.map((category, index) => (
+              {eventCategories.map((category) => (
                 <Link
-                  key={index}
+                  key={category.name}
                   href={`/dashboard/orders/new?category=${category.name
                     .toLowerCase()
                     .replace(/\s+/g, "-")}`}

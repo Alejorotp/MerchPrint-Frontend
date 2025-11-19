@@ -5,12 +5,12 @@
 
 import { apiClient } from "../client";
 import type {
-  LoginDTO,
   AuthResponse,
-  CreateUserDTO,
-  UserDTO,
   CreateRoleDTO,
+  CreateUserDTO,
+  LoginDTO,
   RoleDTO,
+  UserDTO,
 } from "../types";
 
 export const authService = {
@@ -24,7 +24,7 @@ export const authService = {
   async login(credentials: LoginDTO): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>(
       "/auth/login",
-      credentials
+      credentials,
     );
 
     // Guardar tokens en localStorage
@@ -38,7 +38,7 @@ export const authService = {
           email: response.email,
           name: response.name,
           roleId: response.roleId,
-        })
+        }),
       );
     }
 
