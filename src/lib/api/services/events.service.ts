@@ -46,14 +46,14 @@ export const eventsService = {
     id: string,
     data: Partial<CreateEventDTO>,
   ): Promise<EventDTO> {
-    return apiClient.put<EventDTO>(`/events/update/${id}`, data);
+    return apiClient.put<EventDTO>(`/events/${id}`, data);
   },
 
   /**
    * Eliminar evento
    */
   async deleteEvent(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/events/delete/${id}`);
+    return apiClient.delete<{ message: string }>(`/events/${id}`);
   },
 
   // ============================================
@@ -64,28 +64,28 @@ export const eventsService = {
    * Crear una subasta para un evento
    */
   async createAuction(data: CreateAuctionDTO): Promise<AuctionDTO> {
-    return apiClient.post<AuctionDTO>("/auctions", data);
+    return apiClient.post<AuctionDTO>("/events/auctions", data);
   },
 
   /**
    * Obtener subasta por ID
    */
   async getAuctionById(id: string): Promise<AuctionDTO> {
-    return apiClient.get<AuctionDTO>(`/auctions/${id}`);
+    return apiClient.get<AuctionDTO>(`/events/auctions/${id}`);
   },
 
   /**
    * Cancelar una subasta
    */
   async cancelAuction(eventId: string): Promise<AuctionDTO> {
-    return apiClient.post<AuctionDTO>(`/auctions/cancel/${eventId}`, {});
+    return apiClient.put<AuctionDTO>(`/events/auctions/${eventId}/cancel`, {});
   },
 
   /**
    * Finalizar una subasta
    */
   async endAuction(eventId: string): Promise<AuctionDTO> {
-    return apiClient.post<AuctionDTO>(`/auctions/end/${eventId}`, {});
+    return apiClient.put<AuctionDTO>(`/events/auctions/${eventId}/end`, {});
   },
 
   // ============================================
@@ -99,7 +99,7 @@ export const eventsService = {
     eventId: string,
     data: Omit<CreateRequirementsDTO, "eventId">,
   ): Promise<RequirementsDTO> {
-    return apiClient.post<RequirementsDTO>("/requirements", {
+    return apiClient.post<RequirementsDTO>(`/events/${eventId}/requirements`, {
       ...data,
       eventId,
     });
@@ -109,7 +109,7 @@ export const eventsService = {
    * Obtener requisitos de un evento
    */
   async getRequirementsByEventId(eventId: string): Promise<RequirementsDTO[]> {
-    return apiClient.get<RequirementsDTO[]>(`/requirements/event/${eventId}`);
+    return apiClient.get<RequirementsDTO[]>(`/events/${eventId}/requirements`);
   },
 
   /**
@@ -119,13 +119,13 @@ export const eventsService = {
     id: string,
     data: Partial<CreateRequirementsDTO>,
   ): Promise<RequirementsDTO> {
-    return apiClient.put<RequirementsDTO>(`/requirements/update/${id}`, data);
+    return apiClient.put<RequirementsDTO>(`/events/requirements/${id}`, data);
   },
 
   /**
    * Eliminar requisitos
    */
   async deleteRequirements(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/requirements/delete/${id}`);
+    return apiClient.delete<{ message: string }>(`/events/requirements/${id}`);
   },
 };

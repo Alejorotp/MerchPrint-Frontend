@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import { authService, eventsService } from "@/lib/api";
 
 // Estados de órdenes del backend
 type OrderStatus = "pending" | "in_progress" | "completed" | "cancelled";
@@ -23,26 +24,95 @@ export default function MyOrdersPage() {
   const [activeTab, setActiveTab] = useState<OrderStatus | "all">("all");
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
-  // Proteger la ruta
-  useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (!isLoggedIn) {
-      router.push("/login");
-    } else {
-      setIsLoading(false);
-    }
-  }, [router]);
-
   const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [isOrdersLoading, setIsOrdersLoading] = useState(true);
 
-  // Cargar órdenes del usuario desde localStorage
-  useEffect(() => {
-    const storedOrders = localStorage.getItem("userOrders");
-    if (storedOrders) {
-      setOrders(JSON.parse(storedOrders));
+  const loadOrders = useCallback(async () => {
+    setOrdersError(null);
+    setIsOrdersLoading(true);
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser?.id) {
+        throw new Error("No pudimos identificar al usuario actual.");
+      }
+
+      const events = await eventsService.getAllEvents();
+      const myEvents = events.filter(
+        (event) => event.userId === currentUser.id,
+      );
+
+      const requirements = await Promise.all(
+        myEvents.map(async (event) => {
+          try {
+            const data = await eventsService.getRequirementsByEventId(event.id);
+            return data[0] ?? null;
+          } catch (error) {
+            console.error("No se pudieron cargar los requerimientos", {
+              eventId: event.id,
+              error,
+            });
+            return null;
+          }
+        }),
+      );
+
+      const now = Date.now();
+      const mappedOrders: Order[] = myEvents.map((event, index) => {
+        const requirement = requirements[index];
+        const specs = requirement?.specs_json as
+          | { eventType?: unknown }
+          | undefined;
+        const eventDate = new Date(event.date);
+        const diff = eventDate.getTime() - now;
+
+        let status: OrderStatus = "pending";
+        if (diff <= 0) {
+          status = "completed";
+        } else if (diff <= 1000 * 60 * 60 * 24 * 7) {
+          status = "in_progress";
+        }
+
+        return {
+          id: event.id,
+          eventType:
+            specs && typeof specs.eventType === "string"
+              ? (specs.eventType as string)
+              : event.name,
+          quantity: requirement?.quantity ?? 0,
+          status,
+          createdAt: new Date(event.date).toString(),
+          estimatedDate: new Date(event.date).toString(),
+        };
+      });
+
+      setOrders(mappedOrders);
+    } catch (error) {
+      setOrders([]);
+      setOrdersError(
+        error instanceof Error
+          ? error.message
+          : "No pudimos cargar tus pedidos. Intenta nuevamente.",
+      );
+    } finally {
+      setIsOrdersLoading(false);
     }
   }, []);
+
+  // Proteger la ruta y obtener órdenes
+  useEffect(() => {
+    const verifyAndFetch = async () => {
+      const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+      if (!isLoggedIn) {
+        router.push("/login");
+        return;
+      }
+      setIsLoading(false);
+      await loadOrders();
+    };
+
+    verifyAndFetch();
+  }, [router, loadOrders]);
 
   const statusConfig = {
     all: {
@@ -100,14 +170,44 @@ export default function MyOrdersPage() {
       <div className="pt-24 pb-12 px-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Mis pedidos
-            </h1>
-            <p className="text-gray-600">
-              Gestiona y revisa el estado de tus órdenes
-            </p>
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Mis pedidos
+              </h1>
+              <p className="text-gray-600">
+                Gestiona y revisa el estado de tus órdenes
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={loadOrders}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium hover:border-blue-500 hover:text-blue-500 transition-all"
+            >
+              Actualizar lista
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v6h6M20 20v-6h-6M5 19A9 9 0 0119 5"
+                />
+              </svg>
+            </button>
           </div>
+
+          {ordersError && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+              {ordersError}
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="bg-white rounded-2xl shadow-sm p-2 mb-6">
@@ -175,7 +275,12 @@ export default function MyOrdersPage() {
 
           {/* Orders List */}
           <div className="space-y-4">
-            {filteredOrders.length === 0 ? (
+            {isOrdersLoading ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Cargando pedidos...</p>
+              </div>
+            ) : filteredOrders.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                 <div className="text-6xl mb-4">📦</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
