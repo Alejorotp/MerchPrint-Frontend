@@ -10,36 +10,52 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar si el usuario está logueado
-    const token = localStorage.getItem("accessToken");
-    const loggedIn = !!token;
+    const checkAuthStatus = () => {
+      const token = localStorage.getItem("accessToken");
+      const loggedIn = !!token;
 
-    if (loggedIn) {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          setUserEmail(user.email || "");
-        } catch (e) {
-          setUserEmail("");
+      if (loggedIn) {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            setUserEmail(user.email || "");
+          } catch (e) {
+            setUserEmail("");
+          }
         }
+      } else {
+        setUserEmail("");
       }
-    }
 
-    setIsLoggedIn(loggedIn);
+      setIsLoggedIn(loggedIn);
+    };
+
+    // Verificar estado inicial
+    checkAuthStatus();
+
+    // Escuchar cambios en el estado de login
+    window.addEventListener("loginStatusChanged", checkAuthStatus);
+    window.addEventListener("storage", checkAuthStatus);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", checkAuthStatus);
+      window.removeEventListener("storage", checkAuthStatus);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    localStorage.removeItem("isLoggedIn");
     setIsLoggedIn(false);
     setUserEmail("");
 
     // Disparar evento personalizado para notificar a otros componentes
     window.dispatchEvent(new Event("loginStatusChanged"));
 
-    router.push("/");
+    router.push("/login");
   };
 
   const getHomeLink = () => {

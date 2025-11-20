@@ -12,12 +12,23 @@ export default function DashboardPage() {
 
   // Proteger la ruta - solo usuarios logueados
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (!isLoggedIn) {
-      router.push("/login");
-    } else {
-      setIsLoading(false);
-    }
+    const checkAuth = () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.replace("/login");
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Escuchar cambios en el estado de login
+    window.addEventListener("loginStatusChanged", checkAuth);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", checkAuth);
+    };
   }, [router]);
 
   // Mostrar loading mientras verifica autenticación

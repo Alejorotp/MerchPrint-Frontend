@@ -107,7 +107,21 @@ export default function RequirementsPage() {
       }
     };
 
+    const handleAuthChange = () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.replace("/login");
+      }
+    };
+
     loadData();
+
+    // Escuchar cambios en el estado de login
+    window.addEventListener("loginStatusChanged", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", handleAuthChange);
+    };
   }, [eventId, router]);
 
   const addRequirement = () => {

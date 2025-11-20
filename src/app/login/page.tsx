@@ -12,13 +12,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
 
   // Redirigir si ya está logueado
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (isLoggedIn) {
-      router.push("/dashboard");
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      router.replace("/dashboard");
+    } else {
+      setIsChecking(false);
     }
   }, [router]);
 
@@ -33,7 +36,6 @@ export default function LoginPage() {
 
       // authService.login() ya guarda accessToken y refreshToken automáticamente
       // Solo guardamos los datos adicionales del usuario
-      localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("userId", response.userId);
       localStorage.setItem("userName", response.name);
       localStorage.setItem("userEmail", response.email);
@@ -42,7 +44,7 @@ export default function LoginPage() {
       // Disparar evento personalizado para notificar a otros componentes
       window.dispatchEvent(new Event("loginStatusChanged"));
 
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: unknown) {
       const fallbackMessage =
         "Credenciales inválidas. Verifica tu email y contraseña.";
@@ -52,8 +54,21 @@ export default function LoginPage() {
     }
   };
 
+  // Mostrar loading mientras verifica autenticación
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
+      {/* Navbar */}
       {/* Navbar */}
       <nav className="fixed top-0 w-full bg-white shadow-sm z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">

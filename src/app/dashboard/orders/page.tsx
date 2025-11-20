@@ -160,14 +160,28 @@ export default function MyOrdersPage() {
     const verifyAndFetch = async () => {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        router.push("/login");
+        router.replace("/login");
         return;
       }
       setIsLoading(false);
       await Promise.all([loadRequests(), loadOrders()]);
     };
 
+    const handleAuthChange = () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.replace("/login");
+      }
+    };
+
     verifyAndFetch();
+
+    // Escuchar cambios en el estado de login
+    window.addEventListener("loginStatusChanged", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", handleAuthChange);
+    };
   }, [router, loadRequests, loadOrders]);
 
   const statusConfig = {
