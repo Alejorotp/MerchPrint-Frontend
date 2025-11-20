@@ -6,6 +6,26 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { authService, eventsService } from "@/lib/api";
 
+interface Requirement {
+  productType: string;
+  description: string;
+  quantity: number;
+  specs: {
+    color?: string;
+    size?: string;
+    material?: string;
+  };
+  images: string[];
+}
+
+const productTypeLabels: Record<string, string> = {
+  camisetas: "Camisetas",
+  gorras: "Gorras",
+  posters: "Pósters",
+  tazas: "Tazas",
+  otro: "Otro",
+};
+
 export default function CreateOrderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,21 +41,22 @@ export default function CreateOrderPage() {
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState("");
 
-  // Datos de requerimientos
-  const [description, setDescription] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [productType, setProductType] = useState("");
-  const [size, setSize] = useState("");
-  const [colors, setColors] = useState("");
-  const [material, setMaterial] = useState("");
-  const [additionalInfo, setAdditionalInfo] = useState("");
-  const [budget, setBudget] = useState("");
+  // Múltiples requerimientos
+  const [requirements, setRequirements] = useState<Requirement[]>([
+    {
+      productType: "camisetas",
+      description: "",
+      quantity: 0,
+      specs: {},
+      images: [],
+    },
+  ]);
 
   // Proteger la ruta
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-    if (!isLoggedIn) {
-      router.push("/login");
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      router.replace("/login");
     } else {
       setIsLoading(false);
     }
@@ -62,18 +83,80 @@ export default function CreateOrderPage() {
     },
   ];
 
-  const productTypes = [
-    "Camisetas",
-    "Gorras",
-    "Tazas",
-    "Stickers",
-    "Banners",
-    "Volantes",
-    "Invitaciones",
-    "Bolsas",
-    "Llaveros",
-    "Otros",
-  ];
+  const addRequirement = () => {
+    setRequirements([
+      ...requirements,
+      {
+        productType: "camisetas",
+        description: "",
+        quantity: 0,
+        specs: {},
+        images: [],
+      },
+    ]);
+  };
+
+  const removeRequirement = (index: number) => {
+    if (requirements.length > 1) {
+      const updated = requirements.filter((_, i) => i !== index);
+      setRequirements(updated);
+    }
+  };
+
+  const updateRequirement = (
+    index: number,
+    field: keyof Requirement,
+    value: string | number | Record<string, unknown>
+  ) => {
+    const updated = [...requirements];
+    (updated[index][field] as typeof value) = value;
+    setRequirements(updated);
+  };
+
+  const updateSpec = (index: number, specKey: string, value: string) => {
+    const updated = [...requirements];
+    updated[index].specs = {
+      ...updated[index].specs,
+      [specKey]: value,
+    };
+    setRequirements(updated);
+  };
+
+  const handleImageUpload = async (
+    reqIndex: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const updated = [...requirements];
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 2 * 1024 * 1024) {
+        alert(`${file.name} supera los 2MB.`);
+        return;
+      }
+
+      if (!file.type.startsWith("image/")) {
+        alert(`${file.name} no es una imagen válida.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        updated[reqIndex].images.push(base64);
+        setRequirements([...updated]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (reqIndex: number, imageIndex: number) => {
+    const updated = [...requirements];
+    updated[reqIndex].images.splice(imageIndex, 1);
+    setRequirements(updated);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,21 +168,23 @@ export default function CreateOrderPage() {
       if (!currentUser?.id) {
         throw new Error("Debes iniciar sesión antes de crear una orden.");
       }
+
       const eventDateValue = new Date(eventDate);
       if (Number.isNaN(eventDateValue.getTime())) {
         throw new Error("Selecciona una fecha de evento válida.");
       }
 
-      const quantityNumber = Number(quantity);
-      if (!Number.isFinite(quantityNumber) || quantityNumber <= 0) {
-        throw new Error("La cantidad debe ser un número mayor a cero.");
+      // Validar que todos los requisitos tengan datos
+      const invalidReq = requirements.find(
+        (req) => !req.description || req.quantity <= 0
+      );
+      if (invalidReq) {
+        throw new Error(
+          "Todos los requisitos deben tener descripción y cantidad válida."
+        );
       }
 
-      const budgetNumber = Number(budget);
-      if (!Number.isFinite(budgetNumber) || budgetNumber <= 0) {
-        throw new Error("Ingresa un presupuesto estimado válido.");
-      }
-
+      // Crear evento
       const eventPayload = {
         userId: currentUser.id,
         name: eventName,
@@ -109,27 +194,23 @@ export default function CreateOrderPage() {
 
       const createdEvent = await eventsService.createEvent(eventPayload);
 
-      const specsJson: Record<string, unknown> = {
-        eventType,
-        productType,
-      };
-      if (size) specsJson.size = size;
-      if (colors) specsJson.colors = colors;
-      if (material) specsJson.material = material;
-      if (additionalInfo) specsJson.additionalInfo = additionalInfo;
-
-      await eventsService.createRequirements(createdEvent.id, {
-        description,
-        quantity: quantityNumber,
-        specs_json: specsJson,
-      });
-
-      await eventsService.createAuction({
-        event_id: createdEvent.id,
-        start_at: new Date().toISOString(),
-        end_at: eventDateValue.toISOString(),
-        suggested_price: budgetNumber,
-      });
+      // Crear cada requisito
+      await Promise.all(
+        requirements.map((req) =>
+          eventsService.createRequirements(createdEvent.id, {
+            description: `${productTypeLabels[req.productType]}: ${
+              req.description
+            }`,
+            quantity: req.quantity,
+            specs_json: {
+              eventType: eventType,
+              productType: req.productType,
+              ...req.specs,
+              images: req.images,
+            },
+          })
+        )
+      );
 
       router.push("/dashboard/orders?created=1");
     } catch (error) {
@@ -137,7 +218,7 @@ export default function CreateOrderPage() {
       setFormError(
         error instanceof Error
           ? error.message
-          : "Hubo un error al crear la orden. Intenta nuevamente.",
+          : "Hubo un error al crear la orden. Intenta nuevamente."
       );
     } finally {
       setIsSubmitting(false);
@@ -293,166 +374,218 @@ export default function CreateOrderPage() {
 
             {/* Sección: Requerimientos del Producto */}
             <div className="bg-white rounded-2xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <span className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center mr-3 text-sm">
-                  2
-                </span>
-                Detalles del producto
-              </h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <span className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center mr-3 text-sm">
+                    2
+                  </span>
+                  Requisitos del evento
+                </h2>
+                <button
+                  type="button"
+                  onClick={addRequirement}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  Agregar requisito
+                </button>
+              </div>
 
               <div className="space-y-6">
-                <div>
-                  <label
-                    htmlFor="event-description"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                {requirements.map((req, index) => (
+                  <div
+                    key={index}
+                    className="border-2 border-gray-200 rounded-xl p-6 relative"
                   >
-                    Descripción general <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="event-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    required
-                    rows={4}
-                    placeholder="Describe lo que necesitas para tu evento..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 resize-none"
-                  />
-                </div>
+                    {requirements.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeRequirement(index)}
+                        className="absolute top-4 right-4 text-red-500 hover:text-red-700"
+                      >
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      htmlFor="product-type"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Tipo de producto <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="product-type"
-                      value={productType}
-                      onChange={(e) => setProductType(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
-                    >
-                      <option value="">Selecciona un producto</option>
-                      {productTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                      Requisito #{index + 1}
+                    </h3>
+
+                    {/* Tipo de producto */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Tipo de producto <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={req.productType}
+                        onChange={(e) =>
+                          updateRequirement(
+                            index,
+                            "productType",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        required
+                      >
+                        <option value="camisetas">👕 Camisetas</option>
+                        <option value="gorras">🧢 Gorras</option>
+                        <option value="posters">🖼️ Pósters</option>
+                        <option value="tazas">☕ Tazas</option>
+                        <option value="otro">📦 Otro</option>
+                      </select>
+                    </div>
+
+                    {/* Descripción */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Descripción <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={req.description}
+                        onChange={(e) =>
+                          updateRequirement(
+                            index,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Ej: Camisetas con logo del evento"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        required
+                      />
+                    </div>
+
+                    {/* Cantidad */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Cantidad <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={req.quantity || ""}
+                        onChange={(e) =>
+                          updateRequirement(
+                            index,
+                            "quantity",
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                        placeholder="Ej: 100"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        required
+                      />
+                    </div>
+
+                    {/* Especificaciones */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Especificaciones (opcional)
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          value={req.specs.color || ""}
+                          onChange={(e) =>
+                            updateSpec(index, "color", e.target.value)
+                          }
+                          placeholder="Color"
+                          className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        />
+                        <input
+                          type="text"
+                          value={req.specs.size || ""}
+                          onChange={(e) =>
+                            updateSpec(index, "size", e.target.value)
+                          }
+                          placeholder="Talla / Tamaño"
+                          className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        />
+                        <input
+                          type="text"
+                          value={req.specs.material || ""}
+                          onChange={(e) =>
+                            updateSpec(index, "material", e.target.value)
+                          }
+                          placeholder="Material"
+                          className="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Imágenes */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Imágenes de referencia (opcional)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleImageUpload(index, e)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      />
+                      {req.images.length > 0 && (
+                        <div className="grid grid-cols-3 gap-3 mt-3">
+                          {req.images.map((img, imgIndex) => (
+                            <div key={imgIndex} className="relative">
+                              <img
+                                src={img}
+                                alt={`Preview ${imgIndex + 1}`}
+                                className="w-full h-24 object-cover rounded-lg"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index, imgIndex)}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-
-                  <div>
-                    <label
-                      htmlFor="product-quantity"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Cantidad <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="product-quantity"
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      required
-                      min="1"
-                      placeholder="Ej: 100"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="product-budget"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Presupuesto estimado (USD){" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="product-budget"
-                    type="number"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    required
-                    min="1"
-                    step="0.01"
-                    placeholder="Ej: 500"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      htmlFor="product-size"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Tamaño/Dimensiones
-                    </label>
-                    <input
-                      id="product-size"
-                      type="text"
-                      value={size}
-                      onChange={(e) => setSize(e.target.value)}
-                      placeholder="Ej: M, L, XL o 10x15cm"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="product-colors"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Colores
-                    </label>
-                    <input
-                      id="product-colors"
-                      type="text"
-                      value={colors}
-                      onChange={(e) => setColors(e.target.value)}
-                      placeholder="Ej: Azul, Blanco, Rojo"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="product-material"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Material
-                  </label>
-                  <input
-                    id="product-material"
-                    type="text"
-                    value={material}
-                    onChange={(e) => setMaterial(e.target.value)}
-                    placeholder="Ej: Algodón, Poliéster, Papel"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="additional-info"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Información adicional
-                  </label>
-                  <textarea
-                    id="additional-info"
-                    value={additionalInfo}
-                    onChange={(e) => setAdditionalInfo(e.target.value)}
-                    rows={3}
-                    placeholder="Agrega cualquier detalle adicional que consideres importante..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 resize-none"
-                  />
-                </div>
+                ))}
               </div>
             </div>
 

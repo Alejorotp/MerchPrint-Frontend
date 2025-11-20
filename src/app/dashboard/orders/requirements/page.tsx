@@ -227,6 +227,7 @@ export default function RequirementsPage() {
             }`,
             quantity: req.quantity,
             specs_json: {
+              eventType: event?.name || "evento",
               productType: req.productType,
               ...req.specs,
               images: req.images,
