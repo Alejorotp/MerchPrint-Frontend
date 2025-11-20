@@ -6,21 +6,35 @@ import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [username, setUsername] = useState("Usuario");
+  const [userEmail, setUserEmail] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     // Verificar si el usuario está logueado
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    const storedUsername = localStorage.getItem("username") || "Usuario";
+    const token = localStorage.getItem("accessToken");
+    const loggedIn = !!token;
+
+    if (loggedIn) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setUserEmail(user.email || "");
+        } catch (e) {
+          setUserEmail("");
+        }
+      }
+    }
+
     setIsLoggedIn(loggedIn);
-    setUsername(storedUsername);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("username");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
     setIsLoggedIn(false);
+    setUserEmail("");
 
     // Disparar evento personalizado para notificar a otros componentes
     window.dispatchEvent(new Event("loginStatusChanged"));
@@ -87,9 +101,8 @@ export default function Navbar() {
               <button type="button" className="flex items-center space-x-3">
                 <div className="text-right hidden md:block">
                   <p className="text-sm font-semibold text-gray-800">
-                    {username}
+                    {userEmail}
                   </p>
-                  <p className="text-xs text-gray-500">test@merchprint.com</p>
                 </div>
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-semibold hover:shadow-lg transition-all">
                   <svg

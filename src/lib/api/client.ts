@@ -43,7 +43,7 @@ class ApiClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestOptions = {},
+    options: RequestOptions = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestOptions = {
@@ -85,7 +85,21 @@ class ApiClient {
         return null as T;
       }
 
-      return response.json();
+      // Verificar si hay contenido antes de parsear JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        if (!text || text.trim().length === 0) {
+          return [] as T; // Retornar array vacío si no hay contenido
+        }
+      }
+
+      const text = await response.text();
+      if (!text || text.trim().length === 0) {
+        return [] as T; // Retornar array vacío para respuestas vacías
+      }
+
+      return JSON.parse(text);
     } catch (error) {
       console.error("API Request Error:", error);
       throw error;
@@ -132,7 +146,7 @@ class ApiClient {
   async post<T>(
     endpoint: string,
     data?: unknown,
-    options?: RequestOptions,
+    options?: RequestOptions
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
@@ -147,7 +161,7 @@ class ApiClient {
   async put<T>(
     endpoint: string,
     data?: unknown,
-    options?: RequestOptions,
+    options?: RequestOptions
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
