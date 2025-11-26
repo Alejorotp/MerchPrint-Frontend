@@ -100,24 +100,32 @@ export default function CompanyDashboardPage() {
       label: "Pendiente",
       color: "text-yellow-700",
       bgColor: "bg-yellow-100",
+      gradient: "from-yellow-300 via-orange-400 to-yellow-300",
+      shadow: "shadow-yellow-500/50",
       icon: "⏳",
     },
     active: {
       label: "Activa",
-      color: "text-green-700",
-      bgColor: "bg-green-100",
+      color: "text-blue-700",
+      bgColor: "bg-blue-100",
+      gradient: "from-blue-400 via-cyan-400 to-blue-400",
+      shadow: "shadow-blue-500/50",
       icon: "🔥",
     },
     ended: {
       label: "Finalizada",
-      color: "text-gray-700",
-      bgColor: "bg-gray-100",
+      color: "text-green-700",
+      bgColor: "bg-green-100",
+      gradient: "from-green-400 via-emerald-500 to-green-400",
+      shadow: "shadow-green-500/50",
       icon: "🏁",
     },
     cancelled: {
       label: "Cancelada",
       color: "text-red-700",
       bgColor: "bg-red-100",
+      gradient: "from-red-500 via-pink-600 to-red-500",
+      shadow: "shadow-red-500/50",
       icon: "❌",
     },
   };
@@ -175,10 +183,14 @@ export default function CompanyDashboardPage() {
                   className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-6"
                 >
                   <div className="flex gap-6">
-                    <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <span className="text-3xl">
-                        {statusConfig[auction.status].icon}
-                      </span>
+                    <div className="w-20 h-20 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div
+                        className={`w-12 h-12 rounded-full bg-gradient-to-r ${statusConfig[auction.status as keyof typeof statusConfig]?.gradient ||
+                          "from-gray-300 via-gray-400 to-gray-300"
+                          } animate-pulse shadow-lg ${statusConfig[auction.status as keyof typeof statusConfig]?.shadow ||
+                          "shadow-gray-500/50"
+                          } ring-4 ring-white`}
+                      />
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-3">
@@ -192,11 +204,14 @@ export default function CompanyDashboardPage() {
                           </p>
                         </div>
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            statusConfig[auction.status].bgColor
-                          } ${statusConfig[auction.status].color}`}
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig[auction.status as keyof typeof statusConfig]?.bgColor ||
+                            "bg-gray-100"
+                            } ${statusConfig[auction.status as keyof typeof statusConfig]?.color ||
+                            "text-gray-700"
+                            }`}
                         >
-                          {statusConfig[auction.status].label}
+                          {statusConfig[auction.status as keyof typeof statusConfig]?.label ||
+                            auction.status}
                         </span>
                       </div>
 
@@ -207,9 +222,9 @@ export default function CompanyDashboardPage() {
                           </p>
                           <p className="text-lg font-bold text-gray-900">
                             $
-                            {auction.suggested_price.toLocaleString("es-CO", {
+                            {auction.suggested_price?.toLocaleString("es-CO", {
                               maximumFractionDigits: 0,
-                            })}
+                            }) || "0"}
                           </p>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3">
