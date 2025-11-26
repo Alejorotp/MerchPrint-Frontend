@@ -19,6 +19,17 @@ export default function LoginPage() {
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          const isCompany = user.roleId === "692641d17ad15076fef187d1";
+          router.replace(isCompany ? "/company/dashboard" : "/dashboard");
+          return;
+        } catch {
+          // Si falla el parse, usar dashboard por defecto
+        }
+      }
       router.replace("/dashboard");
     } else {
       setIsChecking(false);
@@ -41,10 +52,26 @@ export default function LoginPage() {
       localStorage.setItem("userEmail", response.email);
       localStorage.setItem("userRole", response.roleId);
 
+      // Si es compañía, cargar y guardar el companyId
+      const isCompany = response.roleId === "692641d17ad15076fef187d1";
+      if (isCompany) {
+        try {
+          const { companiesService } = await import("@/lib/api");
+          const company = await companiesService.getCompanyByUserId(
+            response.userId
+          );
+          localStorage.setItem("companyId", company.id);
+        } catch (err) {
+          console.error("Error cargando companyId:", err);
+          // Continuar sin companyId, se manejará en la UI
+        }
+      }
+
       // Disparar evento personalizado para notificar a otros componentes
       window.dispatchEvent(new Event("loginStatusChanged"));
 
-      router.replace("/dashboard");
+      // Redirigir según el rol del usuario
+      router.replace(isCompany ? "/company/dashboard" : "/dashboard");
     } catch (err: unknown) {
       const fallbackMessage =
         "Credenciales inválidas. Verifica tu email y contraseña.";

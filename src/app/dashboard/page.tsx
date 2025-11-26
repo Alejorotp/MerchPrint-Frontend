@@ -16,9 +16,24 @@ export default function DashboardPage() {
       const token = localStorage.getItem("accessToken");
       if (!token) {
         router.replace("/login");
-      } else {
-        setIsLoading(false);
+        return;
       }
+
+      // Redirigir a compañías a su dashboard
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.roleId === "692641d17ad15076fef187d1") {
+            router.replace("/company/dashboard");
+            return;
+          }
+        } catch {
+          // Ignorar error de parse
+        }
+      }
+
+      setIsLoading(false);
     };
 
     checkAuth();

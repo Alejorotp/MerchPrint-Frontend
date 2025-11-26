@@ -21,16 +21,18 @@ export default function Navbar() {
 
       if (loggedIn) {
         const userStr = localStorage.getItem("user");
-        const companyId = localStorage.getItem("companyId");
-        setIsCompany(!!companyId);
 
         if (userStr) {
           try {
             const user = JSON.parse(userStr);
             setUserEmail(user.email || "");
 
+            // Determinar si es compañía por roleId
+            const isCompanyRole = user.roleId === "692641d17ad15076fef187d1";
+            setIsCompany(isCompanyRole);
+
             // Cargar notificaciones solo para clientes (no compañías)
-            if (!companyId && user.id) {
+            if (!isCompanyRole && user.id) {
               await loadNotifications(user.id);
             }
           } catch (e) {

@@ -2,92 +2,130 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-import { authService, eventsService, ordersService } from "@/lib/api";
-import type { EventDTO, AuctionDTO } from "@/lib/api";
+import { authService, eventsService } from "@/lib/api";
+import type { AuctionDTO, EventDTO } from "@/lib/api";
 
-interface AvailableEvent {
-  id: string;
-  name: string;
-  date: string;
-  location: string;
-  auction?: AuctionDTO;
-  requirementsCount: number;
+interface AuctionWithEvent {
+  auction: AuctionDTO;
+  event: EventDTO;
 }
 
 export default function CompanyDashboardPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [availableEvents, setAvailableEvents] = useState<AvailableEvent[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [auctions, setAuctions] = useState<AuctionWithEvent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "active" | "pending">("active");
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        router.replace("/login");
-      } else {
-        setIsLoading(false);
-        loadAvailableEvents();
-      }
-    };
-
-    checkAuth();
-
-    window.addEventListener("loginStatusChanged", checkAuth);
-    return () => {
-      window.removeEventListener("loginStatusChanged", checkAuth);
-    };
-  }, [router]);
-
-  const loadAvailableEvents = async () => {
+  const loadAuctions = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
     try {
       const currentUser = authService.getCurrentUser();
-      if (!currentUser?.id) {
-        throw new Error("Usuario no autenticado");
+      if (
+        !currentUser?.roleId ||
+        currentUser.roleId !== "692641d17ad15076fef187d1"
+      ) {
+        throw new Error("Acceso no autorizado");
       }
 
       // Obtener todos los eventos
       const allEvents = await eventsService.getAllEvents();
 
-      // Por ahora, mostrar todos los eventos
-      // TODO: Implementar filtro de eventos disponibles cuando el backend tenga endpoint
-      const eventsWithoutOrders = allEvents;
-
-      // Cargar requisitos para cada evento
-      const eventsData = await Promise.all(
-        eventsWithoutOrders.map(async (event) => {
-          try {
-            const requirements = await eventsService.getRequirementsByEventId(
-              event.id
-            );
-            return {
-              id: event.id,
-              name: event.name,
-              date: new Date(event.date).toLocaleDateString("es-ES"),
-              location: event.location,
-              requirementsCount: Array.isArray(requirements)
-                ? requirements.length
-                : 0,
-            };
-          } catch (err) {
-            return {
-              id: event.id,
-              name: event.name,
-              date: new Date(event.date).toLocaleDateString("es-ES"),
-              location: event.location,
-              requirementsCount: 0,
-            };
+      // Obtener subastas para cada evento
+      const auctionsWithEvents: AuctionWithEvent[] = [];
+      for (const event of allEvents) {
+        try {
+          const auction = await eventsService.getAuctionByEventId(event.id);
+          if (auction) {
+            auctionsWithEvents.push({ auction, event });
           }
-        })
-      );
+        } catch {
+          // Evento sin subasta, continuar
+        }
+      }
 
-      setAvailableEvents(eventsData);
-    } catch (err) {
-      console.error("Error cargando eventos disponibles:", err);
-      setError("No se pudieron cargar los eventos disponibles");
+      setAuctions(auctionsWithEvents);
+    } catch (error) {
+      console.error("Error cargando subastas:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "No pudimos cargar las subastas disponibles."
+      );
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const verifyAndFetch = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      const currentUser = authService.getCurrentUser();
+      if (
+        !currentUser?.roleId ||
+        currentUser.roleId !== "692641d17ad15076fef187d1"
+      ) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      await loadAuctions();
+    };
+
+    verifyAndFetch();
+
+    const handleAuthChange = () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.replace("/login");
+      }
+    };
+
+    window.addEventListener("loginStatusChanged", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("loginStatusChanged", handleAuthChange);
+    };
+  }, [router, loadAuctions]);
+
+  const filteredAuctions = auctions.filter((item) => {
+    if (filter === "all") return true;
+    return item.auction.status === filter;
+  });
+
+  const statusConfig = {
+    pending: {
+      label: "Pendiente",
+      color: "text-yellow-700",
+      bgColor: "bg-yellow-100",
+      icon: "⏳",
+    },
+    active: {
+      label: "Activa",
+      color: "text-green-700",
+      bgColor: "bg-green-100",
+      icon: "🔥",
+    },
+    ended: {
+      label: "Finalizada",
+      color: "text-gray-700",
+      bgColor: "bg-gray-100",
+      icon: "🏁",
+    },
+    cancelled: {
+      label: "Cancelada",
+      color: "text-red-700",
+      bgColor: "bg-red-100",
+      icon: "❌",
+    },
   };
 
   if (isLoading) {
@@ -110,128 +148,159 @@ export default function CompanyDashboardPage() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Eventos Disponibles
+              Subastas disponibles
             </h1>
             <p className="text-gray-600">
-              Explora los eventos y crea ofertas para participar
+              Encuentra eventos que necesitan tus servicios y envía tu mejor
+              oferta
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl mb-6">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
               {error}
             </div>
           )}
 
-          {/* Lista de eventos */}
-          {availableEvents.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-              <div className="text-gray-400 mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
+          {/* Filtros */}
+          <div className="bg-white rounded-2xl shadow-sm p-4 mb-6">
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                className={`px-6 py-2 rounded-xl font-medium transition-all ${
+                  filter === "all"
+                    ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Todas ({auctions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("active")}
+                className={`px-6 py-2 rounded-xl font-medium transition-all ${
+                  filter === "active"
+                    ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Activas (
+                {auctions.filter((a) => a.auction.status === "active").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("pending")}
+                className={`px-6 py-2 rounded-xl font-medium transition-all ${
+                  filter === "pending"
+                    ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                Pendientes (
+                {auctions.filter((a) => a.auction.status === "pending").length})
+              </button>
+            </div>
+          </div>
+
+          {/* Lista de subastas */}
+          <div className="space-y-4">
+            {filteredAuctions.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  No hay subastas disponibles
+                </h3>
+                <p className="text-gray-600">
+                  {filter === "all"
+                    ? "Aún no hay eventos con subastas activas"
+                    : `No hay subastas ${
+                        filter === "active" ? "activas" : "pendientes"
+                      } en este momento`}
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No hay eventos disponibles
-              </h3>
-              <p className="text-gray-600">
-                No hay eventos activos en este momento
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {availableEvents.map((event) => (
+            ) : (
+              filteredAuctions.map(({ auction, event }) => (
                 <div
-                  key={event.id}
-                  className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow"
+                  key={auction.id}
+                  className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-6"
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">
-                      {event.name}
-                    </h3>
-                    <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-                      Disponible
-                    </span>
-                  </div>
+                  <div className="flex gap-6">
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-3xl">
+                        {statusConfig[auction.status].icon}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {event.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            📍 {event.location} · 📅{" "}
+                            {new Date(event.date).toLocaleDateString("es-ES")}
+                          </p>
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            statusConfig[auction.status].bgColor
+                          } ${statusConfig[auction.status].color}`}
+                        >
+                          {statusConfig[auction.status].label}
+                        </span>
+                      </div>
 
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-gray-600">
-                      <svg
-                        className="w-5 h-5 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      {event.date}
-                    </div>
-                    <div className="flex items-center text-gray-600">
-                      <svg
-                        className="w-5 h-5 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      {event.location}
-                    </div>
-                    <div className="flex items-center text-gray-600">
-                      <svg
-                        className="w-5 h-5 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                        />
-                      </svg>
-                      {event.requirementsCount} requisito
-                      {event.requirementsCount !== 1 ? "s" : ""}
+                      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-500 mb-1">
+                            Precio sugerido
+                          </p>
+                          <p className="text-lg font-bold text-gray-900">
+                            $
+                            {auction.suggested_price.toLocaleString("es-CO", {
+                              maximumFractionDigits: 0,
+                            })}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-500 mb-1">Inicia</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {new Date(auction.start_at).toLocaleDateString(
+                              "es-ES"
+                            )}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-500 mb-1">Cierra</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {new Date(auction.end_at).toLocaleDateString(
+                              "es-ES"
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/company/auctions/${auction.id}/offer`}
+                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                        >
+                          Enviar oferta
+                        </Link>
+                        <Link
+                          href={`/company/auctions/${auction.id}/details`}
+                          className="px-4 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all"
+                        >
+                          Ver detalles
+                        </Link>
+                      </div>
                     </div>
                   </div>
-
-                  <Link
-                    href={`/company/events/${event.id}`}
-                    className="block w-full text-center px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Ver detalles y ofertar
-                  </Link>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-import { authService, ordersService } from "@/lib/api";
+import { authService, ordersService, offersService } from "@/lib/api";
 import type { OrderDTO } from "@/lib/api";
 
 export default function CompanyOrdersPage() {
@@ -13,38 +13,75 @@ export default function CompanyOrdersPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = () => {
+    const verify = async () => {
       const token = localStorage.getItem("accessToken");
-      const companyId = localStorage.getItem("companyId");
-      if (!token || !companyId) {
+      if (!token) {
         router.replace("/login");
-      } else {
-        setIsLoading(false);
-        loadCompanyOrders();
+        return;
+      }
+
+      const currentUser = authService.getCurrentUser();
+      if (
+        !currentUser?.roleId ||
+        currentUser.roleId !== "692641d17ad15076fef187d1"
+      ) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      await loadCompanyOrders();
+    };
+
+    verify();
+
+    const handleAuthChange = () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        router.replace("/login");
       }
     };
 
-    checkAuth();
-
-    window.addEventListener("loginStatusChanged", checkAuth);
+    window.addEventListener("loginStatusChanged", handleAuthChange);
     return () => {
-      window.removeEventListener("loginStatusChanged", checkAuth);
+      window.removeEventListener("loginStatusChanged", handleAuthChange);
     };
   }, [router]);
 
   const loadCompanyOrders = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const companyId = localStorage.getItem("companyId");
       if (!companyId) {
         throw new Error("ID de compañía no encontrado");
       }
 
-      // Por ahora, no hay endpoint para obtener órdenes por compañía
-      // TODO: Implementar cuando el backend tenga el endpoint
-      setOrders([]);
+      // Obtener todas las ofertas de la compañía
+      const allOffers = await offersService.getOffersByCompanyId(companyId);
+
+      // Filtrar solo las ofertas aceptadas y mapearlas como "órdenes"
+      const acceptedOffers = allOffers.filter(
+        (offer) => offer.status === "accepted"
+      );
+
+      // Crear órdenes simuladas a partir de ofertas aceptadas
+      // Cuando el backend implemente órdenes reales, se usará ordersService
+      const ordersData: OrderDTO[] = acceptedOffers.map((offer) => ({
+        id: offer.id,
+        client_id: "",
+        offer_id: offer.id,
+        status: "in_progress",
+        created_at: offer.created_at,
+      }));
+
+      setOrders(ordersData);
     } catch (err) {
       console.error("Error cargando órdenes:", err);
-      setError("No se pudieron cargar las órdenes");
+      setError(
+        err instanceof Error ? err.message : "No se pudieron cargar las órdenes"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
