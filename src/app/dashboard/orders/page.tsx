@@ -49,6 +49,20 @@ export default function MyOrdersPage() {
 
   const handleCreateAuction = async (eventId: string) => {
     try {
+      const priceInput = window.prompt(
+        "Ingresa el precio sugerido (mayor a 0)",
+        "100"
+      );
+      if (priceInput === null) {
+        return;
+      }
+
+      const suggestedPrice = Number(priceInput);
+      if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0) {
+        alert("Debes ingresar un número válido mayor a cero.");
+        return;
+      }
+
       const startDate = new Date();
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + 7); // Subasta activa por 7 días
@@ -57,7 +71,7 @@ export default function MyOrdersPage() {
         event_id: eventId,
         start_at: startDate.toISOString(),
         end_at: endDate.toISOString(),
-        suggested_price: 0,
+        suggested_price: suggestedPrice,
       });
 
       // Recargar las solicitudes para actualizar el estado
@@ -93,6 +107,7 @@ export default function MyOrdersPage() {
 
             // Verificar si existe subasta para este evento
             const auction = await eventsService.getAuctionByEventId(event.id);
+            const hasValidAuction = Boolean(auction?.id);
 
             return {
               id: event.id,
@@ -103,7 +118,7 @@ export default function MyOrdersPage() {
               quantity: requirement?.quantity || 0,
               specs: requirement?.specs_json || {},
               hasRequirements: !!requirement,
-              hasAuction: !!auction,
+              hasAuction: hasValidAuction,
             };
           } catch (error) {
             // Silenciosamente manejar eventos sin requisitos
