@@ -47,39 +47,79 @@ export default function MyOrdersPage() {
   const [isOrdersLoading, setIsOrdersLoading] = useState(true);
   const [isRequestsLoading, setIsRequestsLoading] = useState(true);
 
-  const handleCreateAuction = async (eventId: string) => {
-    try {
-      const priceInput = window.prompt(
-        "Ingresa el precio sugerido (mayor a 0)",
-        "100"
-      );
-      if (priceInput === null) {
-        return;
-      }
+  const [auctionModal, setAuctionModal] = useState<{
+    isOpen: boolean;
+    eventId: string | null;
+    price: string;
+    isSubmitting: boolean;
+    error: string | null;
+  }>({
+    isOpen: false,
+    eventId: null,
+    price: "100",
+    isSubmitting: false,
+    error: null,
+  });
 
-      const suggestedPrice = Number(priceInput);
-      if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0) {
-        alert("Debes ingresar un número válido mayor a cero.");
-        return;
-      }
+  const openAuctionModal = (eventId: string) => {
+    setAuctionModal({
+      isOpen: true,
+      eventId,
+      price: "100",
+      isSubmitting: false,
+      error: null,
+    });
+  };
+
+  const closeAuctionModal = () => {
+    setAuctionModal((prev) => ({
+      ...prev,
+      isOpen: false,
+      eventId: null,
+      price: "100",
+      isSubmitting: false,
+      error: null,
+    }));
+  };
+
+  const confirmAuctionCreation = async () => {
+    if (!auctionModal.eventId) {
+      return;
+    }
+
+    const suggestedPrice = Number(auctionModal.price);
+    if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0) {
+      setAuctionModal((prev) => ({
+        ...prev,
+        error: "Ingresa un número válido mayor a cero.",
+      }));
+      return;
+    }
+
+    try {
+      setAuctionModal((prev) => ({ ...prev, isSubmitting: true, error: null }));
 
       const startDate = new Date();
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + 7); // Subasta activa por 7 días
 
       await eventsService.createAuction({
-        event_id: eventId,
+        event_id: auctionModal.eventId,
         start_at: startDate.toISOString(),
         end_at: endDate.toISOString(),
         suggested_price: suggestedPrice,
       });
 
-      // Recargar las solicitudes para actualizar el estado
       await loadRequests();
+      closeAuctionModal();
       alert("¡Subasta creada exitosamente!");
     } catch (error) {
       console.error("Error creando subasta:", error);
-      alert("No se pudo crear la subasta. Intenta nuevamente.");
+      setAuctionModal((prev) => ({
+        ...prev,
+        isSubmitting: false,
+        error: "No se pudo crear la subasta. Intenta nuevamente.",
+      }));
     }
   };
 
@@ -414,7 +454,13 @@ export default function MyOrdersPage() {
                             </p>
                           </div>
                         )}
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/dashboard/orders/info?eventId=${request.id}`}
+                            className="px-4 py-2 border-2 border-blue-200 text-blue-600 font-semibold rounded-xl hover:border-blue-400 hover:text-blue-700 transition-all"
+                          >
+                            Info
+                          </Link>
                           {request.hasRequirements ? (
                             <>
                               {request.hasAuction ? (
@@ -427,9 +473,7 @@ export default function MyOrdersPage() {
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    handleCreateAuction(request.id)
-                                  }
+                                  onClick={() => openAuctionModal(request.id)}
                                   className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
                                 >
                                   Crear subasta
@@ -538,6 +582,68 @@ export default function MyOrdersPage() {
           </div>
         </div>
       </div>
+      {auctionModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 text-2xl">
+                💡
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Configura tu subasta
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Define un precio sugerido para que las empresas conozcan tu
+                  presupuesto inicial.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Precio sugerido (COP)
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={auctionModal.price}
+                onChange={(e) =>
+                  setAuctionModal((prev) => ({
+                    ...prev,
+                    price: e.target.value,
+                    error: null,
+                  }))
+                }
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 shadow-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+                placeholder="Ej. 250000"
+              />
+              {auctionModal.error && (
+                <p className="text-sm text-red-600">{auctionModal.error}</p>
+              )}
+            </div>
+
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeAuctionModal}
+                className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-gray-300 hover:text-gray-900 sm:w-auto"
+                disabled={auctionModal.isSubmitting}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmAuctionCreation}
+                className="w-full rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-[1.01] hover:shadow-xl sm:w-auto"
+                disabled={auctionModal.isSubmitting}
+              >
+                {auctionModal.isSubmitting ? "Creando..." : "Crear subasta"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

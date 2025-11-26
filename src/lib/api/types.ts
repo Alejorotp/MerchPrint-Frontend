@@ -121,7 +121,7 @@ export interface AuctionDTO {
   start_at: Date | string;
   end_at: Date | string;
   suggested_price: number;
-  status: "active" | "cancelled" | "ended";
+  status: "pending" | "active" | "cancelled" | "ended";
   company_id?: string;
 }
 
