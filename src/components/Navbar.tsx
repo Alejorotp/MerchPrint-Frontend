@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { eventsService, offersService } from "@/lib/api";
@@ -123,9 +124,8 @@ export default function Navbar() {
     return (
       <nav className="fixed top-0 w-full bg-white shadow-sm z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href={getHomeLink()} className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full"></div>
-            <span className="text-2xl font-bold text-gray-800">MerchPrint</span>
+          <Link href={getHomeLink()} className="flex items-center">
+            <Image src="/logo.png" alt="MerchPrint" width={180} height={46} priority />
           </Link>
           {/* Espacio vacío mientras carga */}
           <div className="w-64 h-10"></div>
@@ -137,9 +137,8 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 w-full bg-white shadow-sm z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-        <Link href={getHomeLink()} className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full"></div>
-          <span className="text-2xl font-bold text-gray-800">MerchPrint</span>
+        <Link href={getHomeLink()} className="flex items-center">
+          <Image src="/logo.png" alt="MerchPrint" width={180} height={46} priority />
         </Link>
 
         {isLoggedIn ? (

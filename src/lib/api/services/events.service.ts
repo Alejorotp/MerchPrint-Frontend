@@ -61,6 +61,20 @@ export const eventsService = {
   },
 
   /**
+   * Obtener subasta por ID
+   */
+  async getAuctionById(auctionId: string): Promise<AuctionDTO | null> {
+    try {
+      return await apiClient.get<AuctionDTO>(
+        `/events/auctions/${auctionId}`
+      );
+    } catch (error) {
+      console.error(`No se encontró subasta con ID ${auctionId}`);
+      return null;
+    }
+  },
+
+  /**
    * Crear subasta para un evento
    */
   async createAuction(data: CreateAuctionDTO): Promise<AuctionDTO> {

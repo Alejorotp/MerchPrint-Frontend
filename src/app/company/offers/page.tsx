@@ -47,10 +47,15 @@ export default function CompanyOffersPage() {
       const offersWithEvents = await Promise.all(
         offersData.map(async (offer) => {
           try {
-            // Aquí necesitarías obtener el evento desde la subasta
-            // Por ahora retornamos la oferta sin el evento
+            // Obtener subasta para luego obtener el evento
+            const auction = await eventsService.getAuctionById(offer.auction_id);
+            if (auction?.event_id) {
+              const event = await eventsService.getEventById(auction.event_id);
+              return { ...offer, event };
+            }
             return { ...offer };
           } catch (err) {
+            console.error("Error cargando evento para oferta:", err);
             return { ...offer };
           }
         })
@@ -163,16 +168,28 @@ export default function CompanyOffersPage() {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-xl font-bold text-gray-900">
-                          Oferta #{offer.id.slice(-8)}
+                          {offer.event?.name || "Evento desconocido"}
                         </h3>
-                        <p className="text-gray-600">
-                          Subasta: {offer.auction_id}
+                        <p className="text-gray-600 text-sm">
+                          Oferta #{offer.id.slice(-8)}
                         </p>
+                        {offer.event && (
+                          <p className="text-gray-500 text-sm">
+                            📍 {offer.event.location} · 📅{" "}
+                            {new Date(offer.event.date).toLocaleDateString("es-ES")}
+                          </p>
+                        )}
                       </div>
                       <span
                         className={`px-4 py-2 ${statusColors.bg} ${statusColors.text} rounded-full font-medium`}
                       >
-                        {offer.status}
+                        {offer.status === "pending"
+                          ? "Pendiente"
+                          : offer.status === "accepted"
+                          ? "Aceptada"
+                          : offer.status === "rejected"
+                          ? "Rechazada"
+                          : offer.status}
                       </span>
                     </div>
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import AIGenerateButton from "@/components/AIGenerateButton";
 import { authService, eventsService } from "@/lib/api";
 
 interface Requirement {
@@ -34,6 +35,7 @@ export default function CreateOrderPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  
 
   // Datos del evento
   const [eventType, setEventType] = useState(categoryFromUrl || "");
@@ -157,6 +159,8 @@ export default function CreateOrderPage() {
     updated[reqIndex].images.splice(imageIndex, 1);
     setRequirements(updated);
   };
+
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -554,6 +558,14 @@ export default function CreateOrderPage() {
                         multiple
                         onChange={(e) => handleImageUpload(index, e)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                      />
+                      <AIGenerateButton
+                        className="mt-3"
+                        onImageGenerated={(dataUrl) => {
+                          const updated = [...requirements];
+                          updated[index].images.push(dataUrl);
+                          setRequirements(updated);
+                        }}
                       />
                       {req.images.length > 0 && (
                         <div className="grid grid-cols-3 gap-3 mt-3">

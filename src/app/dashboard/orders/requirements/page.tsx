@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import AIGenerateButton from "@/components/AIGenerateButton";
 import { authService, eventsService } from "@/lib/api";
 import type { EventDTO, RequirementsDTO } from "@/lib/api";
 
@@ -58,6 +59,7 @@ export default function RequirementsPage() {
   ]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
 
   useEffect(() => {
     const loadData = async () => {
@@ -194,6 +196,8 @@ export default function RequirementsPage() {
     updated[reqIndex].images.splice(imageIndex, 1);
     setRequirements(updated);
   };
+
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -486,6 +490,8 @@ export default function RequirementsPage() {
                       Imágenes de referencia (opcional)
                     </label>
 
+                    
+
                     {/* Preview de imágenes cargadas */}
                     {req.images.length > 0 && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
@@ -537,6 +543,16 @@ export default function RequirementsPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       Puedes subir varias imágenes de referencia para el diseño
                     </p>
+
+                    {/* Generar con IA */}
+                    <AIGenerateButton
+                      className="mt-3"
+                      onImageGenerated={(dataUrl) => {
+                        const updated = [...requirements];
+                        updated[index].images.push(dataUrl);
+                        setRequirements(updated);
+                      }}
+                    />
                   </div>
                 </div>
               </div>

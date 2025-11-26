@@ -66,7 +66,8 @@ export default function EventOffersPage() {
   const handleAcceptOffer = async (offerId: string) => {
     try {
       setError(null);
-      await offersService.acceptOffer(offerId);
+      const currentUser = authService.getCurrentUser();
+      await offersService.acceptOffer(offerId, currentUser!.id);
       setSuccessMessage("¡Oferta aceptada! Redirigiendo...");
       setTimeout(() => {
         router.push("/dashboard/orders");
@@ -80,7 +81,8 @@ export default function EventOffersPage() {
   const handleRejectOffer = async (offerId: string) => {
     try {
       setError(null);
-      await offersService.rejectOffer(offerId);
+      const currentUser = authService.getCurrentUser();
+      await offersService.rejectOffer(offerId, currentUser!.id);
       // Recargar ofertas
       await loadEventAndOffers();
     } catch (err: any) {
@@ -232,13 +234,24 @@ export default function EventOffersPage() {
 
                   {offer.specs_json && (
                     <div className="border-t pt-4 mb-4">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">
+                      <p className="text-sm font-semibold text-gray-700 mb-3">
                         Detalles de la oferta
                       </p>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <pre className="text-sm text-gray-900 whitespace-pre-wrap">
-                          {JSON.stringify(offer.specs_json, null, 2)}
-                        </pre>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          {Object.entries(offer.specs_json).map(([key, value]) => (
+                            <div key={key} className="bg-white rounded-lg p-3 border border-gray-200">
+                              <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">
+                                {key.replace(/_/g, ' ')}
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {typeof value === 'object' && value !== null
+                                  ? JSON.stringify(value, null, 2)
+                                  : String(value)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}

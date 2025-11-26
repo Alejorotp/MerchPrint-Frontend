@@ -17,7 +17,6 @@ export default function CompanyDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [auctions, setAuctions] = useState<AuctionWithEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "active" | "pending">("active");
 
   const loadAuctions = useCallback(async () => {
     setError(null);
@@ -34,12 +33,12 @@ export default function CompanyDashboardPage() {
       // Obtener todos los eventos
       const allEvents = await eventsService.getAllEvents();
 
-      // Obtener subastas para cada evento
+      // Obtener subastas pendientes para cada evento
       const auctionsWithEvents: AuctionWithEvent[] = [];
       for (const event of allEvents) {
         try {
           const auction = await eventsService.getAuctionByEventId(event.id);
-          if (auction) {
+          if (auction && auction.status === "pending") {
             auctionsWithEvents.push({ auction, event });
           }
         } catch {
@@ -96,11 +95,6 @@ export default function CompanyDashboardPage() {
     };
   }, [router, loadAuctions]);
 
-  const filteredAuctions = auctions.filter((item) => {
-    if (filter === "all") return true;
-    return item.auction.status === filter;
-  });
-
   const statusConfig = {
     pending: {
       label: "Pendiente",
@@ -156,7 +150,7 @@ export default function CompanyDashboardPage() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Subastas disponibles
+              Subastas Pendientes
             </h1>
             <p className="text-gray-600">
               Encuentra eventos que necesitan tus servicios y envía tu mejor
@@ -170,61 +164,20 @@ export default function CompanyDashboardPage() {
             </div>
           )}
 
-          {/* Filtros */}
-          <div className="bg-white rounded-2xl shadow-sm p-4 mb-6">
-            <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className={`px-6 py-2 rounded-xl font-medium transition-all ${filter === "all"
-                  ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
-              >
-                Todas ({auctions.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("active")}
-                className={`px-6 py-2 rounded-xl font-medium transition-all ${filter === "active"
-                  ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
-              >
-                Activas (
-                {auctions.filter((a) => a.auction.status === "active").length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("pending")}
-                className={`px-6 py-2 rounded-xl font-medium transition-all ${filter === "pending"
-                  ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
-                  : "text-gray-600 hover:bg-gray-100"
-                  }`}
-              >
-                Pendientes (
-                {auctions.filter((a) => a.auction.status === "pending").length})
-              </button>
-            </div>
-          </div>
-
           {/* Lista de subastas */}
           <div className="space-y-4">
-            {filteredAuctions.length === 0 ? (
+            {auctions.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                 <div className="text-6xl mb-4">🔍</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  No hay subastas disponibles
+                  No hay subastas pendientes
                 </h3>
                 <p className="text-gray-600">
-                  {filter === "all"
-                    ? "Aún no hay eventos con subastas activas"
-                    : `No hay subastas ${filter === "active" ? "activas" : "pendientes"
-                    } en este momento`}
+                  No hay subastas pendientes en este momento. Vuelve más tarde para ver nuevas oportunidades.
                 </p>
               </div>
             ) : (
-              filteredAuctions.map(({ auction, event }) => (
+              auctions.map(({ auction, event }) => (
                 <div
                   key={auction.id}
                   className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all p-6"
