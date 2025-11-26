@@ -188,11 +188,15 @@ export default function CreateOrderPage() {
       const eventPayload = {
         userId: currentUser.id,
         name: eventName,
-        date: eventDateValue.toISOString(),
+        date: eventDateValue, // Enviar como Date object, no como string ISO
         location: eventLocation,
       };
 
       const createdEvent = await eventsService.createEvent(eventPayload);
+
+      if (!createdEvent?.id) {
+        throw new Error("No se pudo obtener el ID del evento creado");
+      }
 
       // Crear cada requisito
       await Promise.all(

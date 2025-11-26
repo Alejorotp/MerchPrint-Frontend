@@ -31,6 +31,7 @@ interface ActiveRequest {
   quantity: number;
   specs: Record<string, unknown>;
   hasRequirements: boolean;
+  hasAuction: boolean;
 }
 
 export default function MyOrdersPage() {
@@ -46,6 +47,28 @@ export default function MyOrdersPage() {
   const [isOrdersLoading, setIsOrdersLoading] = useState(true);
   const [isRequestsLoading, setIsRequestsLoading] = useState(true);
 
+  const handleCreateAuction = async (eventId: string) => {
+    try {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 7); // Subasta activa por 7 días
+
+      await eventsService.createAuction({
+        event_id: eventId,
+        start_at: startDate.toISOString(),
+        end_at: endDate.toISOString(),
+        suggested_price: 0,
+      });
+
+      // Recargar las solicitudes para actualizar el estado
+      await loadRequests();
+      alert("¡Subasta creada exitosamente!");
+    } catch (error) {
+      console.error("Error creando subasta:", error);
+      alert("No se pudo crear la subasta. Intenta nuevamente.");
+    }
+  };
+
   const loadRequests = useCallback(async () => {
     setRequestsError(null);
     setIsRequestsLoading(true);
@@ -55,10 +78,8 @@ export default function MyOrdersPage() {
         throw new Error("No pudimos identificar al usuario actual.");
       }
 
-      const events = await eventsService.getAllEvents();
-      const myEvents = events.filter(
-        (event) => event.userId === currentUser.id
-      );
+      // Usar el endpoint directo para obtener eventos del usuario
+      const myEvents = await eventsService.getEventsByUserId(currentUser.id);
 
       const requestsData = await Promise.all(
         myEvents.map(async (event) => {
@@ -70,6 +91,9 @@ export default function MyOrdersPage() {
                 ? requirementsData[0]
                 : null;
 
+            // Verificar si existe subasta para este evento
+            const auction = await eventsService.getAuctionByEventId(event.id);
+
             return {
               id: event.id,
               eventName: event.name,
@@ -79,6 +103,7 @@ export default function MyOrdersPage() {
               quantity: requirement?.quantity || 0,
               specs: requirement?.specs_json || {},
               hasRequirements: !!requirement,
+              hasAuction: !!auction,
             };
           } catch (error) {
             // Silenciosamente manejar eventos sin requisitos
@@ -91,6 +116,7 @@ export default function MyOrdersPage() {
               quantity: 0,
               specs: {},
               hasRequirements: false,
+              hasAuction: false,
             };
           }
         })
@@ -376,12 +402,24 @@ export default function MyOrdersPage() {
                         <div className="flex gap-2">
                           {request.hasRequirements ? (
                             <>
-                              <button
-                                type="button"
-                                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
-                              >
-                                Ver ofertas
-                              </button>
+                              {request.hasAuction ? (
+                                <Link
+                                  href={`/dashboard/events/offers?eventId=${request.id}`}
+                                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                                >
+                                  Ver ofertas
+                                </Link>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleCreateAuction(request.id)
+                                  }
+                                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                                >
+                                  Crear subasta
+                                </button>
+                              )}
                               <Link
                                 href={`/dashboard/orders/requirements?eventId=${request.id}`}
                                 className="px-4 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:border-blue-500 hover:text-blue-500 transition-all"

@@ -40,73 +40,48 @@ export const eventsService = {
   },
 
   /**
-   * Actualizar evento
+   * Obtener eventos por ID de usuario
    */
-  async updateEvent(
-    id: string,
-    data: Partial<CreateEventDTO>,
-  ): Promise<EventDTO> {
-    return apiClient.put<EventDTO>(`/events/${id}`, data);
+  async getEventsByUserId(userId: string): Promise<EventDTO[]> {
+    return apiClient.get<EventDTO[]>(`/events/user/${userId}`);
   },
 
   /**
-   * Eliminar evento
+   * Obtener subasta por ID de evento
    */
-  async deleteEvent(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/events/${id}`);
+  async getAuctionByEventId(eventId: string): Promise<AuctionDTO | null> {
+    try {
+      return await apiClient.get<AuctionDTO>(
+        `/events/auctions/event/${eventId}`
+      );
+    } catch (error) {
+      console.error(`No se encontró subasta para el evento ${eventId}`);
+      return null;
+    }
   },
 
-  // ============================================
-  // Subastas
-  // ============================================
-
   /**
-   * Crear una subasta para un evento
+   * Crear subasta para un evento
    */
   async createAuction(data: CreateAuctionDTO): Promise<AuctionDTO> {
     return apiClient.post<AuctionDTO>("/events/auctions", data);
   },
 
   /**
-   * Obtener subasta por ID
-   */
-  async getAuctionById(id: string): Promise<AuctionDTO> {
-    return apiClient.get<AuctionDTO>(`/events/auctions/${id}`);
-  },
-
-  /**
-   * Cancelar una subasta
-   */
-  async cancelAuction(eventId: string): Promise<AuctionDTO> {
-    return apiClient.put<AuctionDTO>(`/events/auctions/${eventId}/cancel`, {});
-  },
-
-  /**
-   * Finalizar una subasta
-   */
-  async endAuction(eventId: string): Promise<AuctionDTO> {
-    return apiClient.put<AuctionDTO>(`/events/auctions/${eventId}/end`, {});
-  },
-
-  // ============================================
-  // Requisitos
-  // ============================================
-
-  /**
    * Crear requisitos para un evento
    */
   async createRequirements(
     eventId: string,
-    data: Omit<CreateRequirementsDTO, "eventId">,
+    data: Omit<CreateRequirementsDTO, "eventId">
   ): Promise<RequirementsDTO> {
-    return apiClient.post<RequirementsDTO>(`/events/${eventId}/requirements`, {
-      ...data,
-      eventId,
-    });
+    return apiClient.post<RequirementsDTO>(
+      `/events/${eventId}/requirements`,
+      data
+    );
   },
 
   /**
-   * Obtener requisitos de un evento
+   * Obtener todos los requisitos de un evento
    */
   async getRequirementsByEventId(eventId: string): Promise<RequirementsDTO[]> {
     return apiClient.get<RequirementsDTO[]>(`/events/${eventId}/requirements`);
@@ -117,7 +92,7 @@ export const eventsService = {
    */
   async updateRequirements(
     id: string,
-    data: Partial<CreateRequirementsDTO>,
+    data: Partial<CreateRequirementsDTO>
   ): Promise<RequirementsDTO> {
     return apiClient.put<RequirementsDTO>(`/events/requirements/${id}`, data);
   },

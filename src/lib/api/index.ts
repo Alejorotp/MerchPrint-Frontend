@@ -11,6 +11,7 @@ export { authService } from "./services/auth.service";
 export { companiesService } from "./services/companies.service";
 export { eventsService } from "./services/events.service";
 export { ordersService } from "./services/orders.service";
+export { offersService } from "./services/offers.service";
 
 // Tipos
 export type {
