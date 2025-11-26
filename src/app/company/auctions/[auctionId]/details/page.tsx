@@ -66,7 +66,7 @@ const formatSpecValue = (value: unknown): string => {
 export default function AuctionDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const auctionId = params?.id as string;
+  const auctionId = params?.auctionId as string;
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -330,9 +330,8 @@ export default function AuctionDetailsPage() {
                                 >
                                   <img
                                     src={image}
-                                    alt={`Referencia ${index + 1} de ${
-                                      requirement.description
-                                    }`}
+                                    alt={`Referencia ${index + 1} de ${requirement.description
+                                      }`}
                                     className="h-48 w-full object-cover"
                                   />
                                 </div>
