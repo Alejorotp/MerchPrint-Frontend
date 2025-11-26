@@ -35,7 +35,7 @@ export const ordersService = {
    * Obtener todas las órdenes de un cliente
    */
   async getOrdersByClientId(clientId: string): Promise<OrderDTO[]> {
-    return apiClient.get<OrderDTO[]>(`/clients/${clientId}/orders`);
+    return apiClient.get<OrderDTO[]>(`/orders/client/${clientId}`);
   },
 
   /**

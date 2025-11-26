@@ -53,7 +53,9 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
-export default function TrackOrderPage() {
+import { Suspense } from "react";
+
+function TrackOrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -238,26 +240,24 @@ export default function TrackOrderPage() {
                 {/* Línea de progreso */}
                 <div className="absolute top-6 left-0 right-0 h-1 bg-gray-200">
                   <div
-                    className={`h-full ${
-                      status === "completed"
+                    className={`h-full ${status === "completed"
                         ? "bg-green-500 w-full"
                         : status === "in_progress"
-                        ? "bg-blue-500 w-1/2"
-                        : status === "cancelled"
-                        ? "bg-red-500 w-0"
-                        : "bg-yellow-500 w-1/4"
-                    } transition-all duration-500`}
+                          ? "bg-blue-500 w-1/2"
+                          : status === "cancelled"
+                            ? "bg-red-500 w-0"
+                            : "bg-yellow-500 w-1/4"
+                      } transition-all duration-500`}
                   />
                 </div>
 
                 {/* Paso 1: Pendiente */}
                 <div className="relative flex flex-col items-center z-10">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center border-4 ${
-                      status !== "cancelled"
+                    className={`w-12 h-12 rounded-full flex items-center justify-center border-4 ${status !== "cancelled"
                         ? "bg-yellow-500 border-yellow-200"
                         : "bg-gray-300 border-gray-200"
-                    }`}
+                      }`}
                   >
                     <span className="text-white text-lg">⏳</span>
                   </div>
@@ -269,11 +269,10 @@ export default function TrackOrderPage() {
                 {/* Paso 2: En progreso */}
                 <div className="relative flex flex-col items-center z-10">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center border-4 ${
-                      status === "in_progress" || status === "completed"
+                    className={`w-12 h-12 rounded-full flex items-center justify-center border-4 ${status === "in_progress" || status === "completed"
                         ? "bg-blue-500 border-blue-200"
                         : "bg-gray-300 border-gray-200"
-                    }`}
+                      }`}
                   >
                     <span className="text-white text-lg">🔨</span>
                   </div>
@@ -285,11 +284,10 @@ export default function TrackOrderPage() {
                 {/* Paso 3: Completado */}
                 <div className="relative flex flex-col items-center z-10">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center border-4 ${
-                      status === "completed"
+                    className={`w-12 h-12 rounded-full flex items-center justify-center border-4 ${status === "completed"
                         ? "bg-green-500 border-green-200"
                         : "bg-gray-300 border-gray-200"
-                    }`}
+                      }`}
                   >
                     <span className="text-white text-lg">✅</span>
                   </div>
@@ -431,5 +429,22 @@ export default function TrackOrderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <TrackOrderContent />
+    </Suspense>
   );
 }

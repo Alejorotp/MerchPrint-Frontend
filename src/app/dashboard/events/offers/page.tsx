@@ -6,7 +6,9 @@ import Navbar from "@/components/Navbar";
 import { authService, eventsService, offersService } from "@/lib/api";
 import type { EventDTO, OfferDTO, AuctionDTO } from "@/lib/api";
 
-export default function EventOffersPage() {
+import { Suspense } from "react";
+
+function EventOffersContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [event, setEvent] = useState<EventDTO | null>(null);
   const [offers, setOffers] = useState<OfferDTO[]>([]);
@@ -191,19 +193,18 @@ export default function EventOffersPage() {
                       </p>
                     </div>
                     <span
-                      className={`px-4 py-2 font-semibold rounded-lg ${
-                        offer.status === "pending"
+                      className={`px-4 py-2 font-semibold rounded-lg ${offer.status === "pending"
                           ? "bg-yellow-100 text-yellow-700"
                           : offer.status === "accepted"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
                     >
                       {offer.status === "pending"
                         ? "Pendiente"
                         : offer.status === "accepted"
-                        ? "Aceptada"
-                        : "Rechazada"}
+                          ? "Aceptada"
+                          : "Rechazada"}
                     </span>
                   </div>
 
@@ -279,5 +280,22 @@ export default function EventOffersPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EventOffersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <EventOffersContent />
+    </Suspense>
   );
 }

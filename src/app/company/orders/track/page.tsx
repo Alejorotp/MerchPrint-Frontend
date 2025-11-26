@@ -19,7 +19,9 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
-export default function CompanyTrackOrderPage() {
+import { Suspense } from "react";
+
+function TrackOrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const offerId = searchParams.get("offerId");
@@ -62,8 +64,6 @@ export default function CompanyTrackOrderPage() {
         router.replace("/login");
       }
     };
-
-    
 
     window.addEventListener("loginStatusChanged", handleAuthChange);
 
@@ -376,5 +376,22 @@ export default function CompanyTrackOrderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CompanyTrackOrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <TrackOrderContent />
+    </Suspense>
   );
 }

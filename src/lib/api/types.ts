@@ -105,6 +105,7 @@ export interface EventDTO {
   name: string;
   date: Date | string;
   location: string;
+  auction?: AuctionDTO;
 }
 
 export interface CreateAuctionDTO {

@@ -38,7 +38,9 @@ const productTypeEmojis: Record<ProductType, string> = {
   otro: "📦",
 };
 
-export default function RequirementsPage() {
+import { Suspense } from "react";
+
+function RequirementsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
@@ -59,7 +61,7 @@ export default function RequirementsPage() {
   ]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -197,7 +199,7 @@ export default function RequirementsPage() {
     setRequirements(updated);
   };
 
-  
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,9 +228,8 @@ export default function RequirementsPage() {
       const responses = await Promise.all(
         requirements.map(async (req) => {
           const payload = {
-            description: `${productTypeLabels[req.productType]}: ${
-              req.description
-            }`,
+            description: `${productTypeLabels[req.productType]}: ${req.description
+              }`,
             quantity: req.quantity,
             specs_json: {
               eventType: event?.name || "evento",
@@ -391,11 +392,10 @@ export default function RequirementsPage() {
                             onClick={() =>
                               updateRequirement(index, "productType", type)
                             }
-                            className={`p-3 rounded-xl border-2 transition-all text-center ${
-                              req.productType === type
+                            className={`p-3 rounded-xl border-2 transition-all text-center ${req.productType === type
                                 ? "border-blue-500 bg-blue-50 text-blue-700 font-semibold"
                                 : "border-gray-200 hover:border-blue-300 text-gray-700"
-                            }`}
+                              }`}
                           >
                             <div className="text-2xl mb-1">
                               {productTypeEmojis[type]}
@@ -490,7 +490,7 @@ export default function RequirementsPage() {
                       Imágenes de referencia (opcional)
                     </label>
 
-                    
+
 
                     {/* Preview de imágenes cargadas */}
                     {req.images.length > 0 && (
@@ -588,5 +588,22 @@ export default function RequirementsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RequirementsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <RequirementsContent />
+    </Suspense>
   );
 }

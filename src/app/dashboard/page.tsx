@@ -223,37 +223,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-
-          {/* Featured Section */}
-          <div className="mt-12">
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8">
-              <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="mb-6 md:mb-0">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    ¿Primera vez en MerchPrint?
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Descubre cómo funciona nuestra plataforma
-                  </p>
-                  <div className="flex space-x-4">
-                    <Link
-                      href="/tutorial"
-                      className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-full hover:bg-purple-700 transition-all"
-                    >
-                      Ver tutorial
-                    </Link>
-                    <Link
-                      href="/help"
-                      className="px-6 py-3 border-2 border-purple-600 text-purple-600 font-semibold rounded-full hover:bg-purple-600 hover:text-white transition-all"
-                    >
-                      Centro de ayuda
-                    </Link>
-                  </div>
-                </div>
-                <div className="text-6xl">📚</div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

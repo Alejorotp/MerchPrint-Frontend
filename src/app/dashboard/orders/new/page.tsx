@@ -27,7 +27,9 @@ const productTypeLabels: Record<string, string> = {
   otro: "Otro",
 };
 
-export default function CreateOrderPage() {
+import { Suspense } from "react";
+
+function CreateOrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
@@ -35,7 +37,7 @@ export default function CreateOrderPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  
+
 
   // Datos del evento
   const [eventType, setEventType] = useState(categoryFromUrl || "");
@@ -160,7 +162,7 @@ export default function CreateOrderPage() {
     setRequirements(updated);
   };
 
-  
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,9 +208,8 @@ export default function CreateOrderPage() {
       await Promise.all(
         requirements.map((req) =>
           eventsService.createRequirements(createdEvent.id, {
-            description: `${productTypeLabels[req.productType]}: ${
-              req.description
-            }`,
+            description: `${productTypeLabels[req.productType]}: ${req.description
+              }`,
             quantity: req.quantity,
             specs_json: {
               eventType: eventType,
@@ -694,5 +695,22 @@ export default function CreateOrderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateOrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <CreateOrderContent />
+    </Suspense>
   );
 }

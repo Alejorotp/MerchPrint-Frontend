@@ -63,7 +63,9 @@ const formatSpecValue = (value: unknown): string => {
   return String(value);
 };
 
-export default function OrderInfoPage() {
+import { Suspense } from "react";
+
+function OrderInfoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
@@ -335,9 +337,8 @@ export default function OrderInfoPage() {
                                   {/* We intentionally use img to support base64 strings directly */}
                                   <img
                                     src={image}
-                                    alt={`Referencia ${index + 1} de ${
-                                      requirement.description
-                                    }`}
+                                    alt={`Referencia ${index + 1} de ${requirement.description
+                                      }`}
                                     className="h-48 w-full object-cover"
                                   />
                                 </div>
@@ -355,5 +356,22 @@ export default function OrderInfoPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderInfoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <OrderInfoContent />
+    </Suspense>
   );
 }
