@@ -48,14 +48,14 @@ export const offersService = {
   /**
    * Rechazar una oferta
    */
-  async rejectOffer(id: string): Promise<OfferDTO> {
-    return apiClient.put<OfferDTO>(`/offers/${id}/reject`, {});
+  async rejectOffer(id: string, userId: string): Promise<OfferDTO> {
+    return apiClient.post<OfferDTO>(`/offers/${id}/reject`, {"clientID": userId});
   },
 
   /**
    * Aceptar una oferta
    */
-  async acceptOffer(id: string): Promise<OfferDTO> {
-    return apiClient.put<OfferDTO>(`/offers/${id}/accept`, {});
+  async acceptOffer(id: string, userId: string): Promise<OfferDTO> {
+    return apiClient.post<OfferDTO>(`/offers/${id}/accept`, {"clientID": userId});
   },
 };

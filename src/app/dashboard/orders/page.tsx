@@ -20,6 +20,7 @@ interface Order {
   price?: number;
   estimatedDate?: string;
   offer_id?: string;
+  eventId?: string;
 }
 
 interface ActiveRequest {
@@ -211,6 +212,18 @@ export default function MyOrdersPage() {
           else if (order.status === "completed") status = "completed";
           else if (order.status === "cancelled") status = "cancelled";
 
+          let eventId: string | undefined;
+          try {
+            // Get event_id through offer → auction chain
+            const offer = await ordersService.getOfferById(order.offer_id);
+            if (offer?.auction_id) {
+              const auction = await eventsService.getAuctionById(offer.auction_id);
+              eventId = auction?.event_id;
+            }
+          } catch (err) {
+            console.error("Error fetching event for order:", order.id, err);
+          }
+
           return {
             id: order.id,
             eventType: "Orden #" + order.id.substring(0, 8),
@@ -218,6 +231,7 @@ export default function MyOrdersPage() {
             status,
             createdAt: new Date(order.created_at).toLocaleString("es-ES"),
             offer_id: order.offer_id,
+            eventId,
           };
         })
       );
@@ -559,19 +573,13 @@ export default function MyOrdersPage() {
                         ID: <span className="font-mono">{order.id}</span>
                       </p>
                       <div className="flex gap-2">
-                        <button
-                          type="button"
-                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
-                        >
-                          Ver detalles
-                        </button>
                         {order.status === "in_progress" && (
-                          <button
-                            type="button"
+                          <Link
+                            href={`/dashboard/orders/track?orderId=${order.id}`}
                             className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
                           >
                             Seguir pedido
-                          </button>
+                          </Link>
                         )}
                       </div>
                     </div>

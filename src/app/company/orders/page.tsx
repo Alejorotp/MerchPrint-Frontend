@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
-import { authService, ordersService, offersService } from "@/lib/api";
-import type { OrderDTO } from "@/lib/api";
+import { authService, offersService } from "@/lib/api";
+import type { OfferDTO } from "@/lib/api";
 
 export default function CompanyOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [orders, setOrders] = useState<OrderDTO[]>([]);
+  const [orders, setOrders] = useState<OfferDTO[]>([]);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -56,25 +56,13 @@ export default function CompanyOrdersPage() {
         throw new Error("ID de compañía no encontrado");
       }
 
-      // Obtener todas las ofertas de la compañía
+      // Obtener todas las ofertas aceptadas de la compañía
       const allOffers = await offersService.getOffersByCompanyId(companyId);
-
-      // Filtrar solo las ofertas aceptadas y mapearlas como "órdenes"
       const acceptedOffers = allOffers.filter(
         (offer) => offer.status === "accepted"
       );
 
-      // Crear órdenes simuladas a partir de ofertas aceptadas
-      // Cuando el backend implemente órdenes reales, se usará ordersService
-      const ordersData: OrderDTO[] = acceptedOffers.map((offer) => ({
-        id: offer.id,
-        client_id: "",
-        offer_id: offer.id,
-        status: "in_progress",
-        created_at: offer.created_at,
-      }));
-
-      setOrders(ordersData);
+      setOrders(acceptedOffers);
     } catch (err) {
       console.error("Error cargando órdenes:", err);
       setError(
@@ -145,53 +133,52 @@ export default function CompanyOrdersPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {orders.map((order) => (
+              {orders.map((offer) => (
                 <div
-                  key={order.id}
+                  key={offer.id}
                   className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
-                        Orden #{order.id.slice(0, 8)}
+                        Oferta #{offer.id.slice(0, 8)}
                       </h3>
                       <p className="text-gray-600 text-sm">
-                        Creada el{" "}
-                        {new Date(order.created_at).toLocaleDateString("es-ES")}
+                        Aceptada el{" "}
+                        {new Date(offer.created_at).toLocaleDateString("es-ES")}
                       </p>
                     </div>
                     <span className="px-4 py-2 bg-green-100 text-green-700 font-semibold rounded-lg">
-                      Activa
+                      Aceptada
                     </span>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 mb-1">Oferta ID</p>
+                      <p className="text-sm text-gray-600 mb-1">Precio</p>
                       <p className="font-semibold text-gray-900">
-                        {order.offer_id}
+                        ${offer.price.toFixed(2)}
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 mb-1">Estado</p>
+                      <p className="text-sm text-gray-600 mb-1">Tiempo de entrega</p>
                       <p className="font-semibold text-gray-900">
-                        {order.status}
+                        {offer.lead_time_days} días
                       </p>
                     </div>
                   </div>
 
-                  <div className="border-t pt-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      Información adicional
-                    </p>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-900">
-                        Orden ID: {order.id}
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        Cliente ID: {order.client_id}
-                      </p>
-                    </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/company/orders/track?offerId=${offer.id}`
+                        )
+                      }
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+                    >
+                      Ver detalles completos
+                    </button>
                   </div>
                 </div>
               ))}
